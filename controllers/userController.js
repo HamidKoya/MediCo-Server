@@ -62,4 +62,18 @@ const otpVerify = async (req,res) =>{
     }
 }
 
-module.exports = {userRegistration,otpVerify}
+const resendOtp = async (req,res) =>{
+    try {
+        const {userId} = req.body
+        const {name,id,email} = await User.findById({_id:userId})
+        const otpId = sendEmail(name,email,id)
+        if(otpId){
+            res.status(200).json({message:`An otp sent to ${email}`})
+        }
+    } catch (error) {
+        console.log(error.message);
+        res.status(500).json({message:'failed to send otp please try again later'})
+    }
+}
+
+module.exports = {userRegistration,otpVerify,resendOtp}
