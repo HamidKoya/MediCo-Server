@@ -3,8 +3,9 @@ const Otp = require("../models/userOtpModel");
 const securePassword = require("../utils/securePassword");
 const cloudinary = require("../utils/cloudinary");
 const sendEmail = require("../utils/nodeMailer");
-const jwt = require("jsonwebtoken")
-const bcrypt = require('bcryptjs')
+const jwt = require("jsonwebtoken");
+const bcrypt = require("bcryptjs");
+const nodemailer = require("nodemailer");
 
 const userRegistration = async (req, res) => {
   try {
@@ -87,18 +88,21 @@ const userLogin = async (req, res) => {
           const passCheck = await bcrypt.compare(password, emailExist.password);
           if (passCheck) {
             const usertoken = jwt.sign(
-              { userId: emailExist._id},
+              { userId: emailExist._id },
               process.env.JWT_USER_SECRET_KEY
             );
-            const expireDate = new Date(Date.now()+3600000)
+            const expireDate = new Date(Date.now() + 3600000);
             // res.json({ userData: emailExist, token, status: true })
-            res.cookie('user_token',usertoken,{httpOnly:true,expires:expireDate})
+            res
+              .cookie("user_token", usertoken, {
+                httpOnly: true,
+                expires: expireDate,
+              })
               .status(200)
               .json({
                 userData: emailExist,
                 message: `Welome ${emailExist.name}`,
-              })
-              
+              });
           } else {
             // res.json({ alert: "password is incorrect" })
             res.status(401).json({
@@ -125,4 +129,47 @@ const userLogin = async (req, res) => {
   }
 };
 
-module.exports = { userRegistration, otpVerify, resendOtp, userLogin };
+const forgotPassword = async (req, res) => {
+  try {
+    const {email} = req.query
+    const secret = process.env.JWT_USER_SECRET_KEY
+    const isUser = await User.findOne({email:email})
+    if(!isUser){
+      return res.status(200).json({message:'User is not registered'})
+    }
+    const token = jwt.sign({id:isUser._id},secret,{expiresIn:"5m"})
+    let transporter = nodemailer.createTransport({
+      service: "gmail",
+      auth : {
+        user:process.env.email,
+        pass:process.env.PASSWORD
+      }
+    })
+    const mailOptions = {
+      from: process.env.email,
+      to:email,
+      subject: "Forgot password",
+      text:`http://localhost:3000/resetpassword/${isUser._id}/${token}`
+    }
+    transporter.sendMail(mailOptions,function (error,info){
+      if(error){
+        console.error("Error sending email:",error)
+        return res.status(500).json({message:"Failed to send email for password reset."})
+      }else{
+        console.log('Email sent:',info.response);
+        return res.status(200).json({message:"Email sent successfully for password reset"})
+      } 
+    })
+  } catch (error) {
+    console.log(error.message);
+    return res.status(500).json({message:"Internal Server Error"})
+  }
+};
+
+module.exports = {
+  userRegistration,
+  otpVerify,
+  resendOtp,
+  userLogin,
+  forgotPassword,
+};
