@@ -149,7 +149,7 @@ const forgotPassword = async (req, res) => {
       from: process.env.email,
       to:email,
       subject: "Forgot password",
-      text:`http://localhost:3000/resetpassword/${isUser._id}/${token}`
+      text:`http://localhost:5173/resetpassword/${isUser._id}/${token}`
     }
     transporter.sendMail(mailOptions,function (error,info){
       if(error){
@@ -166,10 +166,39 @@ const forgotPassword = async (req, res) => {
   }
 };
 
+const resetPassword = async (req,res) => {
+  try {
+    const {id,token,password} = req.query
+    const isUser = await User.findById(id)
+    if(!isUser){
+      return res.status(401).json({message: 'User is not found'})
+    }
+    try {
+      const verify = jwt.verify(token,process.env.JWT_USER_SECRET_KEY)
+      if(verify){
+        const hashedPassword = await bcrypt.hash(password,10)
+        await User.findByIdAndUpdate(
+          {_id:id},{$set:{password:hashedPassword}}
+        )
+        return res.status(200).json({message:"Successfully changed password"})
+      }else{
+        return res.status(401).json({message:"Unauthorized token due to the expired token"})
+      }
+    } catch (error) {
+      console.log(error.message);
+            return res.status(400).json({ message: "Something wrong with token" });
+    }
+  } catch (error) {
+    console.log(error.message);
+    return res.status(500).json({ message: "Internal Server Error" });
+  }
+}
+
 module.exports = {
   userRegistration,
   otpVerify,
   resendOtp,
   userLogin,
   forgotPassword,
+  resetPassword
 };

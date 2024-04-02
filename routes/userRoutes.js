@@ -7,5 +7,6 @@ router.post("/otpVerify",userController.otpVerify)
 router.post("/resendOtp",userController.resendOtp)
 router.post("/userLogin",userController.userLogin)
 router.get("/forgotPassword",userController.forgotPassword)
+router.patch("/resetPassword",userController.resetPassword)
 
 module.exports = router
