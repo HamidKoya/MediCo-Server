@@ -176,6 +176,7 @@ const resetPassword = async (req,res) => {
     try {
       const verify = jwt.verify(token,process.env.JWT_USER_SECRET_KEY)
       if(verify){
+        console.log('test 1');
         const hashedPassword = await bcrypt.hash(password,10)
         await User.findByIdAndUpdate(
           {_id:id},{$set:{password:hashedPassword}}
@@ -194,11 +195,22 @@ const resetPassword = async (req,res) => {
   }
 }
 
+const logout = async (req,res) => {
+  try {
+     res.clearCookie("user_token");
+     return res.status(200).json({ message: "Successfully logged out" });
+  } catch (error) {
+    console.log(error.message);
+    return res.status(500).json({ message: "Internal Server Error" });
+  }
+}
+
 module.exports = {
   userRegistration,
   otpVerify,
   resendOtp,
   userLogin,
   forgotPassword,
-  resetPassword
+  resetPassword,
+  logout
 };

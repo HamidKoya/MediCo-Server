@@ -8,5 +8,6 @@ router.post("/resendOtp",userController.resendOtp)
 router.post("/userLogin",userController.userLogin)
 router.get("/forgotPassword",userController.forgotPassword)
 router.patch("/resetPassword",userController.resetPassword)
+router.get('/logout',userController.logout)
 
 module.exports = router
