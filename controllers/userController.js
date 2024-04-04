@@ -9,6 +9,7 @@ const nodemailer = require("nodemailer");
 
 const userRegistration = async (req, res) => {
   try {
+    console.log(req.body);
     const { name, mobile, email, password, photo } = req.body;
     const hashedPassword = await securePassword(password);
     const emailExist = await User.findOne({ email: email });
@@ -205,6 +206,26 @@ const logout = async (req,res) => {
   }
 }
 
+const editProfile = async (req,res) => {
+  try {
+    const {name,_id,mobile,gender,age} = req.body
+    const user = await User.findById({_id})
+    if (user) {
+      let userData = await User.findByIdAndUpdate(
+        { _id: _id },
+        { $set: { name: name, mobile: mobile, gender: gender, age: age } },
+        { new: true , select: '-password'} // This option returns the modified document
+      );
+      
+      return res.status(200).json({ message: "Successfully profile edited", userData });
+    }else{
+      return res.status(404).json({message:"user not found"})
+    }
+  } catch (error) {
+    console.log(error.message);
+  }
+}
+
 module.exports = {
   userRegistration,
   otpVerify,
@@ -212,5 +233,6 @@ module.exports = {
   userLogin,
   forgotPassword,
   resetPassword,
-  logout
+  logout,
+  editProfile
 };
