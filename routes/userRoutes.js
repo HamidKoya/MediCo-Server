@@ -10,5 +10,6 @@ router.get("/forgotPassword",userController.forgotPassword)
 router.patch("/resetPassword",userController.resetPassword)
 router.get('/logout',userController.logout)
 router.post('/editProfile',userController.editProfile)
+router.post('/changePhoto',userController.changePhoto)
 
 module.exports = router

@@ -226,6 +226,23 @@ const editProfile = async (req,res) => {
   }
 }
 
+const changePhoto = async (req, res) => {
+  try {
+    const {imageData,userId} = req.body
+    const user = await User.findOne({_id:userId})
+    if(user){
+      const photoResult = await cloudinary.uploader.upload(imageData,{folder:"doctorPhotos"})
+      const userData = await User.findByIdAndUpdate({_id:userId},{$set:{photo:photoResult.secure_url}},{ new: true , select: '-password'})
+      return res.status(200).json({message:"Successfully profile photo changed ",userData})
+    }else{
+      return res.status(404).json({message:"user not found"})
+    }
+  } catch (error) {
+    console.log(error.message);
+  }
+}
+
+
 module.exports = {
   userRegistration,
   otpVerify,
@@ -234,5 +251,6 @@ module.exports = {
   forgotPassword,
   resetPassword,
   logout,
-  editProfile
+  editProfile,
+  changePhoto
 };
