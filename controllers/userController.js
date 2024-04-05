@@ -94,6 +94,16 @@ const userLogin = async (req, res) => {
             );
             const expireDate = new Date(Date.now() + 3600000);
             // res.json({ userData: emailExist, token, status: true })
+            const userDataToSend = {
+              _id: emailExist._id,
+              name: emailExist.name,
+              email: emailExist.email,
+              mobile: emailExist.mobile,
+              age: emailExist.age,
+              photo : emailExist.photo,
+              gender: emailExist.gender,
+              wallet : emailExist.wallet
+            };
             res
               .cookie("user_token", usertoken, {
                 httpOnly: true,
@@ -101,7 +111,7 @@ const userLogin = async (req, res) => {
               })
               .status(200)
               .json({
-                userData: emailExist,
+                userData: userDataToSend,
                 message: `Welome ${emailExist.name}`,
               });
           } else {
