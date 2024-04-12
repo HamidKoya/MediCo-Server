@@ -27,6 +27,8 @@ app.use(
 
 const userRoute = require("./routes/userRoutes");
 app.use("/", userRoute);
+const adminRoute = require("./routes/adminRoutes")
+app.use("/admin",adminRoute)
 
 Connection();
 
