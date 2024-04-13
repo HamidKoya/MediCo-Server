@@ -1,5 +1,19 @@
 const User = require('../models/userModel.js')
 
+const login = async (req, res) => {
+    try {
+        console.log('hello admin');
+        const adminUsername = process.env.ADMIN_USERNAME;
+        const adminPassword = process.env.ADMIN_PASSWORD;
+        const { username, password } = req.body;
+
+            
+    } catch (error) {
+        console.log(error.message);
+    }
+}
+
+
 const usersList = async (req,res) =>{
     try {
         const page = parseInt(req.query.page) || 1
@@ -61,6 +75,7 @@ const blockUnblock = async (req, res) => {
 }
 
 module.exports = {
+    login,
     usersList,
     userDetails,
     blockUnblock
