@@ -1,82 +1,107 @@
-const User = require('../models/userModel.js')
+const jwt = require("jsonwebtoken");
+require("dotenv").config();
+const User = require("../models/userModel.js");
 
 const login = async (req, res) => {
-    try {
-        console.log('hello admin');
-        const adminUsername = process.env.ADMIN_USERNAME;
-        const adminPassword = process.env.ADMIN_PASSWORD;
-        const { username, password } = req.body;
+  
+  try {
+    const adminUsername = process.env.ADMIN_USERNAME;
+    const adminPassword = process.env.ADMIN_PASSWORD;
+    const { username, password } = req.body;
 
-            
-    } catch (error) {
-        console.log(error.message);
+    if (username === adminUsername) {
+      
+
+      const passCheck = password == adminPassword;
+
+      if (passCheck) {
+       
+
+        const admintoken = jwt.sign(
+          { username },
+          process.env.JWT_ADMIN_SECRET_KEY,
+          { expiresIn: "1h" }
+        );
+        const expireDate = new Date(Date.now() + 3600000);
+        res
+          .cookie("admin_token", admintoken, {
+            httpOnly: true,
+            expires: expireDate,
+          })
+          .status(200)
+          .json({ admintoken, message: `Welcome ${username}` });
+      } else {
+        return res.status(400).json({ message: "Password is incorrect" });
+      }
+    } else {
+      return res.status(400).json({ message: "Invalid username" });
     }
-}
+  } catch (error) {
+    console.log(error.message);
+    res.status(500).json({ message: "Internal Server Error" });
+  }
+};
 
+const usersList = async (req, res) => {
+  try {
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 10;
+    const totalItems = await User.countDocuments();
 
-const usersList = async (req,res) =>{
-    try {
-        const page = parseInt(req.query.page) || 1
-        const limit = parseInt(req.query.limit) ||10
-        const totalItems = await User.countDocuments()
+    const users = await User.find()
+      .sort({ createdAt: -1 })
+      .skip((page - 1) * limit)
+      .limit(limit);
 
-
-        const users = await User.find()
-        .sort({createdAt: -1})
-        .skip((page-1)*limit)
-        .limit(limit)
-
-        const results = {
-            users:users,
-            pagination:{
-                currentPage:page,
-                totalPages:Math.ceil(totalItems/limit),
-                totalItems:totalItems
-
-            }
-        }
-        res.status(200).json(results)
-        
-    }catch(error) {
-        console.log(error.message);
-        res.status(500).json({message:"internal server error"})
-    }
-}
+    const results = {
+      users: users,
+      pagination: {
+        currentPage: page,
+        totalPages: Math.ceil(totalItems / limit),
+        totalItems: totalItems,
+      },
+    };
+    res.status(200).json(results);
+  } catch (error) {
+    console.log(error.message);
+    res.status(500).json({ message: "internal server error" });
+  }
+};
 
 const userDetails = async (req, res) => {
-    try {
-        const { id } = req.body
-        const details = await User.findOne({ _id: id })
-        res.status(200).json({ details }) 
-    } catch (error) {
-        console.log(error.message);
-        res.status(500).json({ message: "Internal Server Error" });
-    }
-}
+  try {
+    const { id } = req.body;
+    const details = await User.findOne({ _id: id });
+    res.status(200).json({ details });
+  } catch (error) {
+    console.log(error.message);
+    res.status(500).json({ message: "Internal Server Error" });
+  }
+};
 
 const blockUnblock = async (req, res) => {
-    try {
-        const { id } = req.body
-        const user = await User.findOne({ _id: id })
-        const blocked = user.is_blocked
+  try {
+    const { id } = req.body;
+    const user = await User.findOne({ _id: id });
+    const blocked = user.is_blocked;
 
-        if (blocked) {
-            user.is_blocked = false;
-            await user.save();
-        } else {
-            user.is_blocked = true;
-            await user.save();
-        }
-        res.status(200).json({ user });
-    } catch (error) {
-        console.log(error.message)
-        res.status(500).json({ message: 'Internal Server Error' });
+    if (blocked) {
+      user.is_blocked = false;
+      await user.save();
+    } else {
+      user.is_blocked = true;
+      await user.save();
     }
-}
+    res.status(200).json({ user });
+  } catch (error) {
+    console.log(error.message);
+    res.status(500).json({ message: "Internal Server Error" });
+  }
+};
 
 module.exports = {
-    login,
-    usersList,
-    userDetails,
-    blockUnblock
-}
+  login,
+  usersList,
+  userDetails,
+  blockUnblock,
+};
