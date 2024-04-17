@@ -5,7 +5,7 @@ const sendEmail = require("../utils/doctorMailer.js");
 const Otp = require("../models/doctorOtpModel.js");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
-const nodemailer = require('nodemailer')
+const nodemailer = require("nodemailer");
 
 const signup = async (req, res) => {
   try {
@@ -169,10 +169,9 @@ const login = async (req, res) => {
 };
 
 const forgotPassword = async (req, res) => {
-  console.log('test 1');
   try {
     const { email } = req.query;
-    const secret = process.env.JWT_DOCTOR_SECRET_KEY
+    const secret = process.env.JWT_DOCTOR_SECRET_KEY;
     const isDoctor = await Doctor.findOne({ email: email });
     if (!isDoctor) {
       return res.status(401).json({ message: "Doctor is not regitered" });
@@ -212,10 +211,41 @@ const forgotPassword = async (req, res) => {
   }
 };
 
+const resetPassword = async (req, res) => {
+  try {
+    const { id, token, password } = req.query;
+    console.log(id, token, password);
+    const doctor = await Doctor.findById(id);
+    if (!doctor) {
+      return res.status(401).json({ message: "Doctor not found" });
+    }
+    try {
+      const verify = jwt.verify(token, process.env.JWT_DOCTOR_SECRET_KEY);
+      if (verify) {
+        const hashedPassword = await bcrypt.hash(password, 10);
+        await Doctor.findByIdAndUpdate(
+          { _id: id },
+          { $set: { password: hashedPassword } }
+        );
+        return res
+          .status(200)
+          .json({ message: "Successfully changed password" });
+      }
+    } catch (error) {
+      console.log(error.message);
+      return res.status(400).json({ message: "Something wrong with token" });
+    }
+  } catch (error) {
+    console.log(error.message);
+    return res.status(500).json({ message: "Internal Server Error" });
+  }
+};
+
 module.exports = {
   signup,
   otpVerify,
   resendOtp,
   login,
   forgotPassword,
+  resetPassword,
 };
