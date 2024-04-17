@@ -4,7 +4,8 @@ const cloudinary = require("../utils/cloudinary.js");
 const sendEmail = require("../utils/doctorMailer.js");
 const Otp = require("../models/doctorOtpModel.js");
 const bcrypt = require("bcryptjs");
-const jwt = require('jsonwebtoken')
+const jwt = require("jsonwebtoken");
+const nodemailer = require('nodemailer')
 
 const signup = async (req, res) => {
   try {
@@ -105,68 +106,47 @@ const resendOtp = async (req, res) => {
 };
 
 const login = async (req, res) => {
-  console.log('test 1');
   try {
     const { email, password } = req.body;
     const emailExist = await Doctor.findOne({ email: email });
     if (emailExist) {
-  console.log('test 2');
-
       if (emailExist.otp_verified) {
-  console.log('test 3');
-
         if (emailExist.admin_verify) {
-  console.log('test 4');
-
           if (emailExist.is_blocked === false) {
-  console.log('test 5');
-
             const passCheck = await bcrypt.compare(
               password,
               emailExist.password
             );
             if (passCheck) {
-  console.log('test 6');
-
               const doctortoken = jwt.sign(
-                { doctorId: emailExist._id},
+                { doctorId: emailExist._id },
                 process.env.JWT_DOCTOR_SECRET_KEY
               );
               const expireDate = new Date(Date.now() + 3600000);
-              res.cookie("doctor_token",doctortoken, {
+              res.cookie("doctor_token", doctortoken, {
                 httpOnly: true,
                 expires: expireDate,
-              })
-              res
-                .status(200)
-                .json({
-                  doctorData: emailExist,
-                  message: `Welome ${emailExist.name}`,
-                });
+              });
+              res.status(200).json({
+                doctorData: emailExist,
+                message: `Welome ${emailExist.name}`,
+              });
             } else {
-  console.log('test 7');
-
               res.status(401).json({
                 message: "password is incorrect",
               });
             }
           } else {
-  console.log('test 8');
-
             res.status(401).json({
               message: "You are blocked by admin",
             });
           }
         } else {
-  console.log('test 9');
-
           res.status(401).json({
             message: "Admin needs to verify you",
           });
         }
       } else {
-  console.log('test 10');
-
         otpId = await sendEmail(
           emailExist.name,
           emailExist.email,
@@ -180,15 +160,55 @@ const login = async (req, res) => {
         });
       }
     } else {
-  console.log('test 11');
-
       return res.status(404).json({ message: "Doctor not registered" });
     }
   } catch (error) {
-  console.log('test 12');
-
     console.log(error.message);
     return res.status(500).json({ status: "Internal Server Error" });
+  }
+};
+
+const forgotPassword = async (req, res) => {
+  console.log('test 1');
+  try {
+    const { email } = req.query;
+    const secret = process.env.JWT_DOCTOR_SECRET_KEY
+    const isDoctor = await Doctor.findOne({ email: email });
+    if (!isDoctor) {
+      return res.status(401).json({ message: "Doctor is not regitered" });
+    }
+    const token = jwt.sign({ id: isDoctor._id }, secret, { expiresIn: "5m" });
+    let transporter = nodemailer.createTransport({
+      service: "gmail",
+      auth: {
+        user: process.env.EMAIL,
+        pass: process.env.PASSWORD,
+      },
+    });
+
+    const mailOptions = {
+      from: process.env.EMAIL,
+      to: email,
+      subject: "Forgot password",
+      text: `http://localhost:5173/doctor/resetpassword/${isDoctor._id}/${token}`,
+    };
+
+    transporter.sendMail(mailOptions, function (error, info) {
+      if (error) {
+        console.error("Error sending email:", error);
+        return res
+          .status(500)
+          .json({ message: "Failed to send email for password reset." });
+      } else {
+        console.log("Email sent:", info.response);
+        return res
+          .status(200)
+          .json({ message: "Email sent successfully for password reset." });
+      }
+    });
+  } catch (error) {
+    console.log(error.message);
+    return res.status(500).json({ message: "Internal Server Error" });
   }
 };
 
@@ -197,4 +217,5 @@ module.exports = {
   otpVerify,
   resendOtp,
   login,
+  forgotPassword,
 };
