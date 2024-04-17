@@ -81,9 +81,29 @@ const otpVerify = async (req, res) => {
     }
 }
 
+const resendOtp = async (req, res) => {
+    try {
+        const { doctorId } = req.body
+        const { id, name, email } = await Doctor.findById({ _id: doctorId })
+        const otpId = sendEmail(name, email, id)
+        if (otpId) {
+            res.status(200).json({
+                message: `An OTP has been resent to ${email}.`,
+            });
+        }
+
+    } catch (error) {
+        console.log(error.message);
+        return res
+            .status(500)
+            .json({ message: "Failed to send OTP. Please try again later." });
+    }
+}
+
 
 module.exports = {
     signup,
-    otpVerify
+    otpVerify,
+    resendOtp
 
 }
