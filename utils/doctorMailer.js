@@ -56,6 +56,8 @@ const sendEmail = async (name, email, doctorId) => {
 
     let verified = await DoctorVerificationOtp.save()
 
+
+
     transporter.sendMail(options, (error) => {
       if (error) {
         console.log(error);

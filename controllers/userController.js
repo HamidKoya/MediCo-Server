@@ -46,7 +46,7 @@ const otpVerify = async (req, res) => {
     const { expiresAt } = otpData[otpData.length - 1];
     const correctOtp = otpData[otpData.length - 1].otp;
     if (otpData && expiresAt < Date.now()) {
-      return res.status(401).json({ message: "Email otp has expired" });
+       res.status(401).json({ message: "Email otp has expired" });
     }
     if (correctOtp == enteredValues) {
       await Otp.deleteMany({ userId: userId });
