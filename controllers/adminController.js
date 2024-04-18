@@ -1,6 +1,8 @@
 const jwt = require("jsonwebtoken");
 require("dotenv").config();
 const User = require("../models/userModel.js");
+const cloudinary = require("../utils/cloudinary.js")
+const Speciality = require("../models/specialityModel.js");
 
 const login = async (req, res) => {
   
@@ -99,9 +101,147 @@ const blockUnblock = async (req, res) => {
   }
 };
 
+const addSpeciality = async (req, res) => {
+  console.log('test 1');
+  console.log(req.body);
+  try {
+    const specialityName = req.body.speciality;
+    const photo = req.body.photo;
+
+    // Validate inputs
+    if (!specialityName || !photo) {
+        return res.status(400).json({ message: 'Missing required parameters' });
+    }
+
+    // Additional validation for specialityName: No spaces allowed
+    if (specialityName.includes(' ')) {
+        return res.status(400).json({ message: 'Speciality name cannot contain spaces' });
+    }
+
+    const existing = await Speciality.findOne({
+        speciality: { $regex: new RegExp('^' + specialityName + '$', 'i') },
+    });
+
+    if (existing) {
+        return res.status(400).json({ message: 'Speciality already exists' });
+    }
+
+    // Add validation for photo URL, if needed
+
+    const photoResult = await cloudinary.uploader.upload(photo, { folder: 'specialitysvg' });
+
+    const newSpeciality = new Speciality({
+        speciality: specialityName,
+        photo: photoResult.secure_url, // Save the URL or any identifier you need
+    });
+
+    await newSpeciality.save();
+
+    res.status(200).json({ success: true, message: 'Speciality added successfully' });
+} catch (error) {
+    console.error(error.message);
+    res.status(500).json({ message: 'Internal server error' });
+}
+}
+
+const specialityList = async (req, res) => {
+  try {
+    const { limit, currentPage, } = req.query;
+
+    const page = parseInt(currentPage);
+    const lim = parseInt(limit);
+
+    const startIndex = (page - 1) * lim;
+
+    const totalItems = await Speciality.countDocuments();
+    const data = await Speciality.find().skip(startIndex).limit(lim).sort({ speciality: 1 });
+
+
+    const results = {
+        data: data,
+        pagination: {
+            currentPage: page,
+            totalPages: Math.ceil(totalItems / lim),
+            totalItems: totalItems,
+        },
+    };
+
+    res.status(200).json(results);
+} catch (error) {
+    console.log(error.message);
+    res.status(500).json({ message: 'Internal server error' });
+}
+}
+
+const listUnlist = async (req, res) => {
+  try {
+    const { id } = req.query
+    const data = await Speciality.findById(id)
+
+    if (data.list) {
+        data.list = false
+    } else {
+        data.list = true
+    }
+
+    await data.save()
+    res.status(200).json({ message: "Successfull" })
+
+} catch (error) {
+    console.log(error.message)
+    res.status(500).json({ message: 'Internal server error' });
+}
+}
+
+const editSpeciality = async (req, res) => {
+  try {
+      const id = req.body.id;
+      const editedName = req.body.edit;
+      const photo = req.body.photo;
+  
+      if (!id || !editedName) {
+          return res.status(400).json({ message: 'Missing required parameters' });
+      }
+
+      const existing = await Speciality.findOne({
+          speciality: { $regex: new RegExp('^' + editedName + '$', 'i') },
+      });
+
+      if (existing) {
+          if (photo) {
+          const photoResult = await cloudinary.uploader.upload(photo, { folder: 'specialitysvg' });
+          photoUrl = photoResult.secure_url;
+      }
+          return res.status(400).json({ message: 'Speciality already exists' });
+      }
+
+      let photoUrl;
+
+      if (photo) {
+          const photoResult = await cloudinary.uploader.upload(photo, { folder: 'specialitysvg' });
+          photoUrl = photoResult.secure_url;
+      }
+
+      const data = await Speciality.findOneAndUpdate(
+          { _id: id },
+          { speciality: editedName, ...(photoUrl && { photo: photoUrl }) },
+          { new: true }
+      );
+
+      res.status(200).json({ success: true, message: 'Speciality updated successfully', data });
+  } catch (error) {
+      console.error(error.message);
+      res.status(500).json({ message: 'Internal server error' });
+  }
+};
+
 module.exports = {
   login,
   usersList,
   userDetails,
   blockUnblock,
+  addSpeciality,
+  specialityList,
+  listUnlist,
+  editSpeciality
 };
