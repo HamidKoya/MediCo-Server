@@ -110,7 +110,7 @@ const addSpeciality = async (req, res) => {
 
     // Validate inputs
     if (!specialityName || !photo) {
-        return res.status(400).json({ message: 'Missing required parameters' });
+        return res.status(400).json({ message: 'Please add valid Speciality and image' });
     }
 
     // Additional validation for specialityName: No spaces allowed
@@ -194,12 +194,14 @@ const listUnlist = async (req, res) => {
 }
 
 const editSpeciality = async (req, res) => {
+  
   try {
       const id = req.body.id;
       const editedName = req.body.edit;
       const photo = req.body.photo;
-  
+
       if (!id || !editedName) {
+ 
           return res.status(400).json({ message: 'Missing required parameters' });
       }
 
