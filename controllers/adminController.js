@@ -102,8 +102,8 @@ const blockUnblock = async (req, res) => {
 };
 
 const addSpeciality = async (req, res) => {
-  console.log('test 1');
-  console.log(req.body);
+  
+
   try {
     const specialityName = req.body.speciality;
     const photo = req.body.photo;

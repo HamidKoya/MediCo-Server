@@ -6,6 +6,7 @@ const sendEmail = require("../utils/nodeMailer");
 const jwt = require("jsonwebtoken");
 const bcrypt = require("bcryptjs");
 const nodemailer = require("nodemailer");
+const Speciality = require("../models/specialityModel")
 
 const userRegistration = async (req, res) => {
   try {
@@ -252,6 +253,16 @@ const changePhoto = async (req, res) => {
   }
 }
 
+const specialities = async (req,res) =>{
+  try {
+    const data = await Speciality.find()
+    const filteredData = data.filter(item => item.list === true); 
+    return res.status(200).json(filteredData)
+  } catch (error) {
+    console.log(error.message);
+  }
+}
+
 
 module.exports = {
   userRegistration,
@@ -262,5 +273,6 @@ module.exports = {
   resetPassword,
   logout,
   editProfile,
-  changePhoto
+  changePhoto,
+  specialities
 };
