@@ -3,6 +3,7 @@ require("dotenv").config();
 const User = require("../models/userModel.js");
 const cloudinary = require("../utils/cloudinary.js")
 const Speciality = require("../models/specialityModel.js");
+const Doctor = require("../models/doctorModel.js")
 
 const login = async (req, res) => {
   
@@ -237,6 +238,32 @@ const editSpeciality = async (req, res) => {
   }
 };
 
+
+//doctor
+const unVerifiedList = async (req, res) => {
+  try {
+    const page = parseInt(req.query.page)||1
+    const limit = parseInt(req.query.limit) || 10
+    const totalItems = await Doctor.countDocuments()
+    const doctors = await Doctor.find({ otp_verified: true, admin_verify: false })
+    .sort({ createdAt: -1 })
+    .skip((page - 1) * limit)
+    .limit(limit)
+
+    const results = {
+      doctors:doctors,
+      pagination:{
+        currentPage:page,
+        totalPages: Math.ceil(totalItems / limit),
+                totalItems: totalItems,
+      }
+    }
+    res.status(200).json(results)
+  } catch (error) {
+    console.log(error.message);
+  }
+}
+
 module.exports = {
   login,
   usersList,
@@ -245,5 +272,6 @@ module.exports = {
   addSpeciality,
   specialityList,
   listUnlist,
-  editSpeciality
+  editSpeciality,
+  unVerifiedList
 };

@@ -13,4 +13,7 @@ router.patch('/listUnlist',adminController.listUnlist)
 router.patch('/editSpeciality',adminController.editSpeciality)
 
 
+router.get('/unVerifiedList',adminController.unVerifiedList)
+
+
 module.exports = router
