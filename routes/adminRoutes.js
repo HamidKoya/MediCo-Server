@@ -14,6 +14,8 @@ router.patch('/editSpeciality',adminController.editSpeciality)
 
 
 router.get('/unVerifiedList',adminController.unVerifiedList)
+router.get('/unVerifiedDetails',adminController.unVerifiedDetails)
+router.patch('/adminVerify',adminController.adminVerify)
 
 
 module.exports = router
