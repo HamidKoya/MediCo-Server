@@ -16,6 +16,9 @@ router.patch('/editSpeciality',adminController.editSpeciality)
 router.get('/unVerifiedList',adminController.unVerifiedList)
 router.get('/unVerifiedDetails',adminController.unVerifiedDetails)
 router.patch('/adminVerify',adminController.adminVerify)
-
+router.get('/doctorList',adminController.doctorList)
+router.post('/doctorDetails',adminController.doctorDetails)
+router.patch('/doctorblockUnblock',adminController.blockApprove)
+console.log('test 5');
 
 module.exports = router

@@ -235,13 +235,11 @@ const editSpeciality = async (req, res) => {
       { new: true }
     );
 
-    res
-      .status(200)
-      .json({
-        success: true,
-        message: "Speciality updated successfully",
-        data,
-      });
+    res.status(200).json({
+      success: true,
+      message: "Speciality updated successfully",
+      data,
+    });
   } catch (error) {
     console.error(error.message);
     res.status(500).json({ message: "Internal server error" });
@@ -289,22 +287,88 @@ const unVerifiedDetails = async (req, res) => {
 
 const adminVerify = async (req, res) => {
   try {
-      const { id } = req.query;
-      const doctor = await Doctor.findById(id);
-      const verified = doctor.admin_verify;
+    const { id } = req.query;
+    const doctor = await Doctor.findById(id);
+    const verified = doctor.admin_verify;
 
-      if (verified === false) {
-          doctor.admin_verify = true;
-          await doctor.save();
-          return res.status(200).json({ doctor });
-      } else {
-          return res.status(400).json({ message: 'Doctor is already verified' });
-      }
+    if (verified === false) {
+      doctor.admin_verify = true;
+      await doctor.save();
+      return res.status(200).json({ doctor });
+    } else {
+      return res.status(400).json({ message: "Doctor is already verified" });
+    }
   } catch (error) {
-      console.log(error.message);
-      return res.status(500).json({ message: 'Internal Server Error' });
+    console.log(error.message);
+    return res.status(500).json({ message: "Internal Server Error" });
   }
 };
+
+const doctorList = async (req, res) => {
+  try {
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 10;
+    const totalItems = await Doctor.countDocuments();
+
+    const doctors = await Doctor.find({
+      admin_verify: true,
+      otp_verified: true,
+    })
+      .sort({ createdAt: -1 })
+      .skip((page - 1) * limit)
+      .limit(limit);
+
+    const results = {
+      doctors: doctors,
+      pagination: {
+        currentPage: page,
+        totalPages: Math.ceil(totalItems / limit),
+        totalItems: totalItems,
+      },
+    };
+
+    res.status(200).json(results);
+  } catch (error) {
+    console.log(error.message);
+    res.status(500).json({ message: "Internal Server Error" });
+  }
+};
+
+const doctorDetails = async (req, res) => {
+  
+  console.log('test 1');
+  try {
+      const { id } = req.body
+      const details = await Doctor.findOne({ _id: id })
+      res.status(200).json({ details })
+
+  } catch (error) {
+      console.log(error.message)
+      res.status(500).json({ message: 'Internal Server Error' });
+  }
+}
+
+const blockApprove = async (req, res) => {
+  try {
+      const { id } = req.body
+      const doctor = await Doctor.findOne({ _id: id })
+      const blocked = doctor.is_blocked
+
+      if (blocked) {
+          doctor.is_blocked = false;
+          await doctor.save();
+      } else {
+          doctor.is_blocked = true;
+          await doctor.save();
+      }
+      res.status(200).json({ doctor });
+
+  } catch (error) {
+      console.log(error.message)
+      res.status(500).json({ message: 'Internal Server Error' });
+
+  }
+}
 
 module.exports = {
   login,
@@ -317,5 +381,8 @@ module.exports = {
   editSpeciality,
   unVerifiedList,
   unVerifiedDetails,
-  adminVerify
+  adminVerify,
+  doctorList,
+  doctorDetails,
+  blockApprove
 };
