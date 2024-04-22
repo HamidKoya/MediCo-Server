@@ -19,6 +19,6 @@ router.patch('/adminVerify',adminController.adminVerify)
 router.get('/doctorList',adminController.doctorList)
 router.post('/doctorDetails',adminController.doctorDetails)
 router.patch('/doctorblockUnblock',adminController.blockApprove)
-console.log('test 5');
+
 
 module.exports = router

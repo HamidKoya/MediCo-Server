@@ -335,40 +335,37 @@ const doctorList = async (req, res) => {
 };
 
 const doctorDetails = async (req, res) => {
-  
-  console.log('test 1');
   try {
-      const { id } = req.body
-      const details = await Doctor.findOne({ _id: id })
-      res.status(200).json({ details })
-
+    const { id } = req.body;
+    const details = await Doctor.findOne({ _id: id });
+    res.status(200).json({ details });
   } catch (error) {
-      console.log(error.message)
-      res.status(500).json({ message: 'Internal Server Error' });
+    console.log(error.message);
+    res.status(500).json({ message: "Internal Server Error" });
   }
-}
+};
 
 const blockApprove = async (req, res) => {
   try {
-      const { id } = req.body
-      const doctor = await Doctor.findOne({ _id: id })
-      const blocked = doctor.is_blocked
+    const { userId } = req.body
+ 
+    const doctor = await Doctor.findOne({ _id: userId });
 
-      if (blocked) {
-          doctor.is_blocked = false;
-          await doctor.save();
-      } else {
-          doctor.is_blocked = true;
-          await doctor.save();
-      }
-      res.status(200).json({ doctor });
+    const blocked = doctor.is_blocked;
 
+    if (blocked) {
+      doctor.is_blocked = false;
+      await doctor.save();
+    } else {
+      doctor.is_blocked = true;
+      await doctor.save();
+    }
+    res.status(200).json({ doctor });
   } catch (error) {
-      console.log(error.message)
-      res.status(500).json({ message: 'Internal Server Error' });
-
+    console.log(error.message);
+    res.status(500).json({ message: "Internal Server Error" });
   }
-}
+};
 
 module.exports = {
   login,
@@ -384,5 +381,5 @@ module.exports = {
   adminVerify,
   doctorList,
   doctorDetails,
-  blockApprove
+  blockApprove,
 };
