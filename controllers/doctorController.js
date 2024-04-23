@@ -6,6 +6,7 @@ const Otp = require("../models/doctorOtpModel.js");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const nodemailer = require("nodemailer");
+const Speciality = require("../models/specialityModel.js")
 
 const signup = async (req, res) => {
   try {
@@ -57,6 +58,15 @@ const signup = async (req, res) => {
     res.status(500).json({ status: "Internal Server Error" });
   }
 };
+
+const specialtyName = async (req, res) => {
+  try {
+    const data = await Speciality.find()
+    res.status(200).json(data)
+  } catch (error) {
+    console.log(error.message);
+  }
+}
 
 const otpVerify = async (req, res) => {
   try {
@@ -243,6 +253,7 @@ const resetPassword = async (req, res) => {
 
 module.exports = {
   signup,
+  specialtyName,
   otpVerify,
   resendOtp,
   login,
