@@ -1,4 +1,5 @@
 const User = require("../models/userModel");
+const Doctor = require("../models/doctorModel")
 const Otp = require("../models/userOtpModel");
 const securePassword = require("../utils/securePassword");
 const cloudinary = require("../utils/cloudinary");
@@ -263,6 +264,48 @@ const specialities = async (req,res) =>{
   }
 }
 
+const doctorList = async (req, res) => {
+  try {
+    const { search, select, page, count, sort } = req.query;
+    const query = { is_blocked: false, admin_verify: true }; // Added admin_verify condition
+
+    if (search) {
+        query.$or = [
+            { name: { $regex: new RegExp(search, 'i') } },
+            { speciality: { $regex: new RegExp(search, 'i') } }
+        ];
+    }
+
+    if (select) {
+        query.speciality = select;
+    }
+
+    // Find total count of doctors without pagination
+    const totalDoctorsCount = await Doctor.countDocuments(query);
+
+    let doctors;
+
+    if (sort === 'experience') {
+        // If sorting by experience
+        doctors = await Doctor.find(query)
+            .sort({ experience: -1 })
+            .skip((page - 1) * count)
+            .limit(parseInt(count));
+    } else {
+        // Default sorting or other sorting options
+        doctors = await Doctor.find(query)
+            .skip((page - 1) * count)
+            .limit(parseInt(count));
+    }
+
+    // Send response with doctors and total count
+    res.status(200).json({ doctors, totalCount: totalDoctorsCount });
+} catch (error) {
+    console.log(error.message);
+    res.status(500).json({ message: "Internal Server Error" });
+}
+}
+
 
 module.exports = {
   userRegistration,
@@ -274,5 +317,6 @@ module.exports = {
   logout,
   editProfile,
   changePhoto,
-  specialities
+  specialities,
+  doctorList
 };

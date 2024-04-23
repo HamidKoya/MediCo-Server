@@ -12,5 +12,6 @@ router.get('/logout',userController.logout)
 router.post('/editProfile',userController.editProfile)
 router.post('/changePhoto',userController.changePhoto)
 router.get('/specialities',userController.specialities)
+router.get('/doctorList',userController.doctorList)
 
 module.exports = router
