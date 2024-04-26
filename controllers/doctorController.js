@@ -10,7 +10,6 @@ const Speciality = require("../models/specialityModel.js")
 
 const signup = async (req, res) => {
   try {
-    console.log(req.body);
     const { name, mobile, email, speciality, password, photo, certificates } =
       req.body;
     const spassword = await securePassword(password);
