@@ -6,7 +6,7 @@ const Otp = require("../models/doctorOtpModel.js");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const nodemailer = require("nodemailer");
-const Speciality = require("../models/specialityModel.js")
+const Speciality = require("../models/specialityModel.js");
 
 const signup = async (req, res) => {
   try {
@@ -61,12 +61,12 @@ const signup = async (req, res) => {
 
 const specialtyName = async (req, res) => {
   try {
-    const data = await Speciality.find()
-    res.status(200).json(data)
+    const data = await Speciality.find();
+    res.status(200).json(data);
   } catch (error) {
     console.log(error.message);
   }
-}
+};
 
 const otpVerify = async (req, res) => {
   try {
@@ -251,6 +251,31 @@ const resetPassword = async (req, res) => {
   }
 };
 
+const changePhoto = async (req, res) => {
+  try {
+    const { imageData, doctorId } = req.body;
+    
+    const doctor = await Doctor.findOne({ _id: doctorId });
+    if (doctor) {
+      const photoResult = await cloudinary.uploader.upload(imageData, {
+        folder: "doctorPhotos",
+      });
+      const doctorData = await Doctor.findByIdAndUpdate(
+        { _id: doctorId },
+        { $set: { photo: photoResult.secure_url } },
+        { new: true, select: "-password" }
+      );
+      return res
+        .status(200)
+        .json({ message: "Successfully profile photo changed ", doctorData });
+    } else {
+      return res.status(404).json({ message: "user not found" });
+    }
+  } catch (error) {
+    console.log(error.message);
+  }
+};
+
 module.exports = {
   signup,
   specialtyName,
@@ -259,4 +284,5 @@ module.exports = {
   login,
   forgotPassword,
   resetPassword,
+  changePhoto,
 };

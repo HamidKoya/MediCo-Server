@@ -9,6 +9,7 @@ router.post('/resendOtp',doctorController.resendOtp)
 router.post('/login',doctorController.login)
 router.get('/forgotPassword',doctorController.forgotPassword)
 router.patch('/resetPassword',doctorController.resetPassword)
+router.post('/changePhoto',doctorController.changePhoto)
 
 
 
