@@ -10,6 +10,7 @@ router.post('/login',doctorController.login)
 router.get('/forgotPassword',doctorController.forgotPassword)
 router.patch('/resetPassword',doctorController.resetPassword)
 router.post('/changePhoto',doctorController.changePhoto)
+router.post('/editProfile',doctorController.editProfile)
 
 
 

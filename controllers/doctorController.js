@@ -254,7 +254,7 @@ const resetPassword = async (req, res) => {
 const changePhoto = async (req, res) => {
   try {
     const { imageData, doctorId } = req.body;
-    
+
     const doctor = await Doctor.findOne({ _id: doctorId });
     if (doctor) {
       const photoResult = await cloudinary.uploader.upload(imageData, {
@@ -276,6 +276,30 @@ const changePhoto = async (req, res) => {
   }
 };
 
+const editProfile = async (req, res) => {
+  try {
+    const { doctorId, name, mobile, experience, bio } = req.body;
+    const doctorData = await Doctor.findOneAndUpdate(
+      { _id: doctorId },
+      {
+        $set: {
+          name: name,
+          mobile: mobile,
+          experience: experience,
+          bio: bio
+        },
+      },
+      { new: true }
+    );
+    res
+      .status(200)
+      .json({ message: "Doctor details updated successfully", doctorData });
+  } catch (error) {
+    console.log(error.message);
+    return res.status(500).json({ status: "Internal Server Error" });
+  }
+};
+
 module.exports = {
   signup,
   specialtyName,
@@ -285,4 +309,5 @@ module.exports = {
   forgotPassword,
   resetPassword,
   changePhoto,
+  editProfile,
 };
