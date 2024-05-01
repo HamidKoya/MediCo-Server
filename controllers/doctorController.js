@@ -7,6 +7,8 @@ const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const nodemailer = require("nodemailer");
 const Speciality = require("../models/specialityModel.js");
+const { ObjectId } = require("mongodb");
+const moment = require("moment");
 
 const signup = async (req, res) => {
   try {
@@ -286,7 +288,7 @@ const editProfile = async (req, res) => {
           name: name,
           mobile: mobile,
           experience: experience,
-          bio: bio
+          bio: bio,
         },
       },
       { new: true }
@@ -294,6 +296,113 @@ const editProfile = async (req, res) => {
     res
       .status(200)
       .json({ message: "Doctor details updated successfully", doctorData });
+  } catch (error) {
+    console.log(error.message);
+    return res.status(500).json({ status: "Internal Server Error" });
+  }
+};
+
+// Function to generate time slots
+const generateTimeSlots = (start, end, duration) => {
+  const timeSlots = [];
+  const slotDuration = parseInt(duration);
+
+  const [hours, minutes] = start.split(":");
+  let currentTime = new Date();
+  currentTime.setHours(hours);
+  currentTime.setMinutes(minutes);
+
+  const [hrs, min] = end.split(":");
+  const ends = new Date();
+  ends.setHours(hrs);
+  ends.setMinutes(min);
+
+  while (currentTime < ends) {
+    const endTime = new Date(currentTime);
+    endTime.setMinutes(endTime.getMinutes() + slotDuration);
+
+    if (endTime <= ends) {
+      const objectId = new ObjectId();
+      const endingTime = moment(endTime);
+      const staring = new Date(currentTime);
+      const startingTime = moment(staring);
+      timeSlots.push({
+        start: startingTime.format("HH:mm"),
+        end: endingTime.format("HH:mm"),
+        booked: false,
+        objectId: objectId.toString(),
+      });
+    }
+
+    currentTime = endTime;
+  }
+
+  return timeSlots;
+};
+
+const slotCreation = async (req, res) => {
+  try {
+    const { startTime, endTime, slotDuration, date } = req.body.formData;
+    const doctorId = req.body.doctorId;
+    if (!date) {
+      return res.status(200).send({
+        success: false,
+        message: "Invalid date.",
+      });
+    }
+    const parsedDate = new Date(date);
+    const currentDate = new Date();
+    if (parsedDate < currentDate) {
+      return res.status(200).send({
+        success: false,
+        message: "Invalid date. Slot creation allowed only for future dates.",
+      });
+    }
+    // Ensure startTime is less than endTime
+    if (startTime >= endTime) {
+      return res.status(200).send({
+        success: false,
+        message:
+          "Invalid time range. Starting time must be less than ending time.",
+      });
+    }
+    const isExist = await Doctor.findOne({
+      _id: doctorId,
+      slots: {
+        $elemMatch: {
+          $and: [
+            { date: parsedDate },
+            { startTime: startTime },
+            { endTime: endTime },
+          ],
+        },
+      },
+    });
+    if (isExist) {
+      return res.status(200).send({
+        success: false,
+        message: "This time already exists",
+      });
+    }
+    const timeSlots = generateTimeSlots(startTime, endTime, slotDuration);
+    await Doctor.updateOne(
+      { _id: doctorId },
+      {
+        $push: {
+          slots: {
+            date: parsedDate, // Use the parsed date here
+            startTime,
+            endTime,
+            slotDuration,
+            timeSlots,
+          },
+        },
+      }
+    );
+    res.status(200).send({
+      success: true,
+      message: "Slot created successfully",
+    });
   } catch (error) {
     console.log(error.message);
     return res.status(500).json({ status: "Internal Server Error" });
@@ -310,4 +419,5 @@ module.exports = {
   resetPassword,
   changePhoto,
   editProfile,
+  slotCreation,
 };

@@ -11,6 +11,7 @@ router.get('/forgotPassword',doctorController.forgotPassword)
 router.patch('/resetPassword',doctorController.resetPassword)
 router.post('/changePhoto',doctorController.changePhoto)
 router.post('/editProfile',doctorController.editProfile)
+router.post('/slotCreation',doctorController.slotCreation)
 
 
 
