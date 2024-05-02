@@ -409,6 +409,25 @@ const slotCreation = async (req, res) => {
   }
 };
 
+const slotDetails = async (req, res) => {
+  try {
+    const {doctorId} = req.body
+    const doctor = await Doctor.findById(doctorId);
+    const allSlots = doctor.slots;
+
+    // Reverse the order of slots
+    const reversedSlots = allSlots.slice().reverse();
+
+    res.status(200).json({
+      data: reversedSlots,
+      totalSlots: reversedSlots.length,
+    });
+  } catch (error) {
+    console.log(error.message);
+    return res.status(500).json({ status: "Internal Server Error" });
+  }
+};
+
 module.exports = {
   signup,
   specialtyName,
@@ -420,4 +439,5 @@ module.exports = {
   changePhoto,
   editProfile,
   slotCreation,
+  slotDetails,
 };
