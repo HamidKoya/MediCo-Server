@@ -306,6 +306,14 @@ const doctorList = async (req, res) => {
 }
 }
 
+const slotList = async (req, res) => {
+  try {
+    console.log('hello world');
+  } catch (error) {
+    console.log(error.message);
+  }
+}
+
 
 module.exports = {
   userRegistration,
@@ -318,5 +326,6 @@ module.exports = {
   editProfile,
   changePhoto,
   specialities,
-  doctorList
+  doctorList,
+  slotList
 };
