@@ -1,5 +1,5 @@
 const User = require("../models/userModel");
-const Doctor = require("../models/doctorModel")
+const Doctor = require("../models/doctorModel");
 const Otp = require("../models/userOtpModel");
 const securePassword = require("../utils/securePassword");
 const cloudinary = require("../utils/cloudinary");
@@ -7,7 +7,8 @@ const sendEmail = require("../utils/nodeMailer");
 const jwt = require("jsonwebtoken");
 const bcrypt = require("bcryptjs");
 const nodemailer = require("nodemailer");
-const Speciality = require("../models/specialityModel")
+const Speciality = require("../models/specialityModel");
+const moment = require("moment");
 
 const userRegistration = async (req, res) => {
   try {
@@ -48,7 +49,7 @@ const otpVerify = async (req, res) => {
     const { expiresAt } = otpData[otpData.length - 1];
     const correctOtp = otpData[otpData.length - 1].otp;
     if (otpData && expiresAt < Date.now()) {
-       res.status(401).json({ message: "Email otp has expired" });
+      res.status(401).json({ message: "Email otp has expired" });
     }
     if (correctOtp == enteredValues) {
       await Otp.deleteMany({ userId: userId });
@@ -102,9 +103,9 @@ const userLogin = async (req, res) => {
               email: emailExist.email,
               mobile: emailExist.mobile,
               age: emailExist.age,
-              photo : emailExist.photo,
+              photo: emailExist.photo,
               gender: emailExist.gender,
-              wallet : emailExist.wallet
+              wallet: emailExist.wallet,
             };
             res
               .cookie("user_token", usertoken, {
@@ -144,125 +145,144 @@ const userLogin = async (req, res) => {
 
 const forgotPassword = async (req, res) => {
   try {
-    const {email} = req.query
-    const secret = process.env.JWT_USER_SECRET_KEY
-    const isUser = await User.findOne({email:email})
-    if(!isUser){
-      return res.status(200).json({message:'User is not registered'})
+    const { email } = req.query;
+    const secret = process.env.JWT_USER_SECRET_KEY;
+    const isUser = await User.findOne({ email: email });
+    if (!isUser) {
+      return res.status(200).json({ message: "User is not registered" });
     }
-    const token = jwt.sign({id:isUser._id},secret,{expiresIn:"5m"})
+    const token = jwt.sign({ id: isUser._id }, secret, { expiresIn: "5m" });
     let transporter = nodemailer.createTransport({
       service: "gmail",
-      auth : {
-        user:process.env.email,
-        pass:process.env.PASSWORD
-      }
-    })
+      auth: {
+        user: process.env.email,
+        pass: process.env.PASSWORD,
+      },
+    });
     const mailOptions = {
       from: process.env.email,
-      to:email,
+      to: email,
       subject: "Forgot password",
-      text:`http://localhost:5173/resetpassword/${isUser._id}/${token}`
-    }
-    transporter.sendMail(mailOptions,function (error,info){
-      if(error){
-        console.error("Error sending email:",error)
-        return res.status(500).json({message:"Failed to send email for password reset."})
-      }else{
-        console.log('Email sent:',info.response);
-        return res.status(200).json({message:"Email sent successfully for password reset"})
-      } 
-    })
+      text: `http://localhost:5173/resetpassword/${isUser._id}/${token}`,
+    };
+    transporter.sendMail(mailOptions, function (error, info) {
+      if (error) {
+        console.error("Error sending email:", error);
+        return res
+          .status(500)
+          .json({ message: "Failed to send email for password reset." });
+      } else {
+        console.log("Email sent:", info.response);
+        return res
+          .status(200)
+          .json({ message: "Email sent successfully for password reset" });
+      }
+    });
   } catch (error) {
     console.log(error.message);
-    return res.status(500).json({message:"Internal Server Error"})
+    return res.status(500).json({ message: "Internal Server Error" });
   }
 };
 
-const resetPassword = async (req,res) => {
+const resetPassword = async (req, res) => {
   try {
-    const {id,token,password} = req.query
-    const isUser = await User.findById(id)
-    if(!isUser){
-      return res.status(401).json({message: 'User is not found'})
+    const { id, token, password } = req.query;
+    const isUser = await User.findById(id);
+    if (!isUser) {
+      return res.status(401).json({ message: "User is not found" });
     }
     try {
-      const verify = jwt.verify(token,process.env.JWT_USER_SECRET_KEY)
-      if(verify){
-        console.log('test 1');
-        const hashedPassword = await bcrypt.hash(password,10)
+      const verify = jwt.verify(token, process.env.JWT_USER_SECRET_KEY);
+      if (verify) {
+        console.log("test 1");
+        const hashedPassword = await bcrypt.hash(password, 10);
         await User.findByIdAndUpdate(
-          {_id:id},{$set:{password:hashedPassword}}
-        )
-        return res.status(200).json({message:"Successfully changed password"})
-      }else{
-        return res.status(401).json({message:"Unauthorized token due to the expired token"})
+          { _id: id },
+          { $set: { password: hashedPassword } }
+        );
+        return res
+          .status(200)
+          .json({ message: "Successfully changed password" });
+      } else {
+        return res
+          .status(401)
+          .json({ message: "Unauthorized token due to the expired token" });
       }
     } catch (error) {
       console.log(error.message);
-            return res.status(400).json({ message: "Something wrong with token" });
+      return res.status(400).json({ message: "Something wrong with token" });
     }
   } catch (error) {
     console.log(error.message);
     return res.status(500).json({ message: "Internal Server Error" });
   }
-}
+};
 
-const logout = async (req,res) => {
+const logout = async (req, res) => {
   try {
-     res.clearCookie("user_token");
-     return res.status(200).json({ message: "Successfully logged out" });
+    res.clearCookie("user_token");
+    return res.status(200).json({ message: "Successfully logged out" });
   } catch (error) {
     console.log(error.message);
     return res.status(500).json({ message: "Internal Server Error" });
   }
-}
+};
 
-const editProfile = async (req,res) => {
+const editProfile = async (req, res) => {
   try {
-    const {name,_id,mobile,gender,age} = req.body
-    const user = await User.findById({_id})
+    const { name, _id, mobile, gender, age } = req.body;
+    const user = await User.findById({ _id });
     if (user) {
       let userData = await User.findByIdAndUpdate(
         { _id: _id },
         { $set: { name: name, mobile: mobile, gender: gender, age: age } },
-        { new: true , select: '-password'} // This option returns the modified document
+        { new: true, select: "-password" } // This option returns the modified document
       );
-      
-      return res.status(200).json({ message: "Successfully profile edited", userData });
-    }else{
-      return res.status(404).json({message:"user not found"})
+
+      return res
+        .status(200)
+        .json({ message: "Successfully profile edited", userData });
+    } else {
+      return res.status(404).json({ message: "user not found" });
     }
   } catch (error) {
     console.log(error.message);
   }
-}
+};
 
 const changePhoto = async (req, res) => {
   try {
-    const {imageData,userId} = req.body
-    const user = await User.findOne({_id:userId})
-    if(user){
-      const photoResult = await cloudinary.uploader.upload(imageData,{folder:"doctorPhotos"})
-      const userData = await User.findByIdAndUpdate({_id:userId},{$set:{photo:photoResult.secure_url}},{ new: true , select: '-password'})
-      return res.status(200).json({message:"Successfully profile photo changed ",userData})
-    }else{
-      return res.status(404).json({message:"user not found"})
+    const { imageData, userId } = req.body;
+    const user = await User.findOne({ _id: userId });
+    if (user) {
+      const photoResult = await cloudinary.uploader.upload(imageData, {
+        folder: "doctorPhotos",
+      });
+      const userData = await User.findByIdAndUpdate(
+        { _id: userId },
+        { $set: { photo: photoResult.secure_url } },
+        { new: true, select: "-password" }
+      );
+      return res
+        .status(200)
+        .json({ message: "Successfully profile photo changed ", userData });
+    } else {
+      return res.status(404).json({ message: "user not found" });
     }
   } catch (error) {
     console.log(error.message);
   }
-}
+};
 
-const specialities = async (req,res) =>{
+const specialities = async (req, res) => {
   try {
-    const data = await Speciality.find()
-    const filteredData = data.filter(item => item.list === true); 
-    return res.status(200).json(filteredData)
+    const data = await Speciality.find();
+    const filteredData = data.filter((item) => item.list === true);
+    return res.status(200).json(filteredData);
   } catch (error) {
     console.log(error.message);
   }
-}
+};
 
 const doctorList = async (req, res) => {
   try {
@@ -270,14 +290,14 @@ const doctorList = async (req, res) => {
     const query = { is_blocked: false, admin_verify: true }; // Added admin_verify condition
 
     if (search) {
-        query.$or = [
-            { name: { $regex: new RegExp(search, 'i') } },
-            { speciality: { $regex: new RegExp(search, 'i') } }
-        ];
+      query.$or = [
+        { name: { $regex: new RegExp(search, "i") } },
+        { speciality: { $regex: new RegExp(search, "i") } },
+      ];
     }
 
     if (select) {
-        query.speciality = select;
+      query.speciality = select;
     }
 
     // Find total count of doctors without pagination
@@ -285,35 +305,44 @@ const doctorList = async (req, res) => {
 
     let doctors;
 
-    if (sort === 'experience') {
-        // If sorting by experience
-        doctors = await Doctor.find(query)
-            .sort({ experience: -1 })
-            .skip((page - 1) * count)
-            .limit(parseInt(count));
+    if (sort === "experience") {
+      // If sorting by experience
+      doctors = await Doctor.find(query)
+        .sort({ experience: -1 })
+        .skip((page - 1) * count)
+        .limit(parseInt(count));
     } else {
-        // Default sorting or other sorting options
-        doctors = await Doctor.find(query)
-            .skip((page - 1) * count)
-            .limit(parseInt(count));
+      // Default sorting or other sorting options
+      doctors = await Doctor.find(query)
+        .skip((page - 1) * count)
+        .limit(parseInt(count));
     }
 
     // Send response with doctors and total count
     res.status(200).json({ doctors, totalCount: totalDoctorsCount });
-} catch (error) {
+  } catch (error) {
     console.log(error.message);
     res.status(500).json({ message: "Internal Server Error" });
-}
-}
+  }
+};
 
 const slotList = async (req, res) => {
   try {
-    console.log('hello world');
+    const { id, date } = req.query;
+    const selectedDate = moment.utc(date); // Set timezone to UTC
+    const doctor = await Doctor.findById(id);
+
+    // Filter slots based on the selected date
+    const availableSlots = doctor.slots.filter((slot) => {
+      const slotDate = moment.utc(slot.date); // Set timezone to UTC
+      return slotDate.isSame(selectedDate, "day")
+    });
+    res.status(200).json({availableSlots})
   } catch (error) {
     console.log(error.message);
+    res.status(500).json({error:'internal server error'});
   }
-}
-
+};
 
 module.exports = {
   userRegistration,
@@ -327,5 +356,5 @@ module.exports = {
   changePhoto,
   specialities,
   doctorList,
-  slotList
+  slotList,
 };
