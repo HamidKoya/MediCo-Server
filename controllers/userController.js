@@ -335,12 +335,42 @@ const slotList = async (req, res) => {
     // Filter slots based on the selected date
     const availableSlots = doctor.slots.filter((slot) => {
       const slotDate = moment.utc(slot.date); // Set timezone to UTC
-      return slotDate.isSame(selectedDate, "day")
+      return slotDate.isSame(selectedDate, "day");
     });
-    res.status(200).json({availableSlots})
+    res.status(200).json({ availableSlots });
   } catch (error) {
     console.log(error.message);
-    res.status(500).json({error:'internal server error'});
+    res.status(500).json({ error: "internal server error" });
+  }
+};
+
+
+const stripe = require("stripe")(
+  "sk_test_51PCyspSCJjN9vy1RQ7gEOb2h44Hi9q1DghlfYZe2zWjTO86j9L5VnMOdRvsnmUAKx0yCyr6VdjWgTQu64W8odgAV00lxfK5JPZ"
+);
+const makePayment = async (req, res) => {
+  try {
+    const { price, date, userId, id, select } = req.body;
+    const selectedDate = moment(date);
+
+    const session = await stripe.checkout.sessions.create({
+      billing_address_collection: "auto",
+      line_items: [
+        {
+          price: price.id,
+          quantity: 1,
+        },
+      ],
+      mode: "payment",
+      success_url: `http://localhost:5173/success?status=true&success&_id=${userId}&drId=${id}&select=${select}&date=${selectedDate}`,
+      cancel_url: `http://localhost:5173/`,
+    });
+    res.status(200).json({ session });
+  } catch (error) {
+    console.error(error.message);
+    res
+      .status(500)
+      .json({ error: "An error occurred while processing the payment." });
   }
 };
 
@@ -357,4 +387,5 @@ module.exports = {
   specialities,
   doctorList,
   slotList,
+  makePayment,
 };
