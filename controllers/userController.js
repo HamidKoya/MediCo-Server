@@ -9,6 +9,7 @@ const bcrypt = require("bcryptjs");
 const nodemailer = require("nodemailer");
 const Speciality = require("../models/specialityModel");
 const moment = require("moment");
+require("dotenv").config();
 
 const userRegistration = async (req, res) => {
   try {
@@ -344,23 +345,47 @@ const slotList = async (req, res) => {
   }
 };
 
-
-const stripe = require("stripe")(
-  "sk_test_51PCyspSCJjN9vy1RQ7gEOb2h44Hi9q1DghlfYZe2zWjTO86j9L5VnMOdRvsnmUAKx0yCyr6VdjWgTQu64W8odgAV00lxfK5JPZ"
-);
+const stripe = require("stripe")(process.env.STRIPE_SECRET_KEY);
 const makePayment = async (req, res) => {
   try {
     const { price, date, userId, id, select } = req.body;
     const selectedDate = moment(date);
 
-    const session = await stripe.checkout.sessions.create({
-      billing_address_collection: "auto",
-      line_items: [
-        {
-          price: price.id,
-          quantity: 1,
+    const customer = await stripe.customers.create({
+      metadata: {
+        userId: "hyev3788fsjhfg9fhjf",
+        courseId: "course678dfg65678dfgid",
+        price: 299,
+      },
+      name: "Jhon",
+      address: {
+        city: "New York",
+        country: "US",
+        line1: "123 Main Street",
+        line2: "Apt 4b",
+        postal_code: "10001",
+        state: "NY",
+      },
+    });
+
+    const line_items = [
+      {
+        price_data: {
+          currency: "inr",
+          product_data: {
+            name: "Appointment",
+            description: "it's for a appointment",
+          },
+          unit_amount: 299 * 100,
         },
-      ],
+        quantity: 1,
+      },
+    ];
+
+    const session = await stripe.checkout.sessions.create({
+      payment_method_types: ["card"],
+      line_items,
+      customer: customer.id,
       mode: "payment",
       success_url: `http://localhost:5173/success?status=true&success&_id=${userId}&drId=${id}&select=${select}&date=${selectedDate}`,
       cancel_url: `http://localhost:5173/`,
