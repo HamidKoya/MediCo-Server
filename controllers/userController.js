@@ -1,6 +1,9 @@
 const User = require("../models/userModel");
 const Doctor = require("../models/doctorModel");
 const Otp = require("../models/userOtpModel");
+const Payment = require("../models/paymentModel");
+const AppointmentModel = require("../models/appointmentModel");
+const NotificationModel = require("../models/notificationModel");
 const securePassword = require("../utils/securePassword");
 const cloudinary = require("../utils/cloudinary");
 const sendEmail = require("../utils/nodeMailer");
@@ -399,6 +402,68 @@ const makePayment = async (req, res) => {
   }
 };
 
+const makeAppointment = async (req, res) => {
+  try {
+    const { userId, doctorId, select, date } = req.body;
+    const price = "299";
+    const payment = new Payment({
+      doctor: doctorId,
+      user: userId,
+      price: price,
+    });
+    const paymentData = await payment.save();
+
+    const updatedDoctor = await Doctor.findOneAndUpdate(
+      { _id: doctorId, "slots.timeSlots.objectId": select },
+      { $set: { "slots.$[outer].timeSlots.$[inner].booked": true } },
+      {
+        arrayFilters: [
+          { "outer._id": { $exists: true } },
+          { "inner.objectId": select },
+        ],
+        new: true, // Return the modified document
+      }
+    );
+
+    // Finding Selected Slot
+    const selectedSlot = updatedDoctor.slots.reduce((found, ts) => {
+      const slot = ts.timeSlots.find((item) => item.objectId === select);
+      if (slot) {
+        found = slot;
+      }
+      return found;
+    }, null);
+
+    //creating an appointment
+    const appointment = new AppointmentModel({
+      doctor: doctorId,
+      user: userId,
+      paymentId: paymentData._id,
+      slotId: select,
+      consultationDate: date,
+      start: selectedSlot.start,
+      end: selectedSlot.end,
+    });
+
+    const appointmentData = await appointment.save();
+
+    const notification = new NotificationModel({
+      text: "Your appointment successfully done",
+      userId: userId,
+    });
+
+    await notification.save();
+
+    // Sending Response
+    res
+      .status(200)
+      .json({ paymentData, appointmentData, message: "Payment is success" });
+  } catch (error) {
+    console.log(error.message);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+};
+
 module.exports = {
   userRegistration,
   otpVerify,
@@ -413,4 +478,5 @@ module.exports = {
   doctorList,
   slotList,
   makePayment,
+  makeAppointment,
 };

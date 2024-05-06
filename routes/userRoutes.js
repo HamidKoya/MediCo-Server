@@ -15,5 +15,6 @@ router.get('/specialities',userController.specialities)
 router.get('/doctorList',userController.doctorList)
 router.get('/slotList',userController.slotList)
 router.post('/makePayment',userController.makePayment)
+router.post('/makeAppointment',userController.makeAppointment)
 
 module.exports = router
