@@ -9,6 +9,8 @@ const nodemailer = require("nodemailer");
 const Speciality = require("../models/specialityModel.js");
 const { ObjectId } = require("mongodb");
 const moment = require("moment");
+const AppointmentModel = require("../models/appointmentModel.js");
+const mongoose = require("mongoose");
 
 const signup = async (req, res) => {
   try {
@@ -411,7 +413,7 @@ const slotCreation = async (req, res) => {
 
 const slotDetails = async (req, res) => {
   try {
-    const {doctorId} = req.body
+    const { doctorId } = req.body;
     const doctor = await Doctor.findById(doctorId);
     const allSlots = doctor.slots;
 
@@ -428,6 +430,77 @@ const slotDetails = async (req, res) => {
   }
 };
 
+const appointmentList = async (req, res) => {
+  try {
+    const doctorId = req.query.id;
+    const page = parseInt(req.query.currentPage) || 1;
+    const limit = parseInt(req.query.limit) || 2;
+
+    const startIndex = (page - 1) * limit;
+
+    const data = await AppointmentModel.aggregate([
+      {
+        $match: {
+          doctor: new mongoose.Types.ObjectId(doctorId),
+        },
+      },
+      {
+        $lookup: {
+          from: "users",
+          localField: "user",
+          foreignField: "_id",
+          as: "userDetails",
+        },
+      },
+      {
+        $unwind: "$userDetails",
+      },
+      {
+        $sort: { createdAt: -1 },
+      },
+      {
+        $skip: startIndex,
+      },
+      {
+        $limit: limit,
+      },
+    ]);
+
+    const formattedData = data.map((appointment) => ({
+      ...appointment,
+      createdAt: moment(new Date(appointment.createdAt)).format("YYYY-MM-DD "),
+      consultationDate: moment(new Date(appointment.consultationDate)).format(
+        "YYYY-MM-DD "
+      ),
+      // Add more fields with date values if needed
+    }));
+
+    const date = new Date();
+    const currentDate = moment(date).format("YYYY MM DD");
+    const currentTime = moment(date).format("HH:mm");
+
+    const totalItems = await AppointmentModel.countDocuments({
+      doctor: doctorId,
+    });
+
+    const results = {
+      data: formattedData,
+      currentDate: currentDate,
+      currentTime: currentTime,
+      pagination: {
+        currentPage: page,
+        totalPages: Math.ceil(totalItems / limit),
+        totalItems: totalItems,
+      },
+    };
+
+    res.status(200).json(results);
+  } catch (error) {
+    console.log(error.message);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+};
+
 module.exports = {
   signup,
   specialtyName,
@@ -440,4 +513,5 @@ module.exports = {
   editProfile,
   slotCreation,
   slotDetails,
+  appointmentList,
 };

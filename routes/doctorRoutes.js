@@ -13,6 +13,7 @@ router.post('/changePhoto',doctorController.changePhoto)
 router.post('/editProfile',doctorController.editProfile)
 router.post('/slotCreation',doctorController.slotCreation)
 router.post('/slotDetails',doctorController.slotDetails)
+router.get('/appointmentList',doctorController.appointmentList)
 
 
 
