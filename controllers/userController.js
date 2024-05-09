@@ -13,6 +13,7 @@ const nodemailer = require("nodemailer");
 const Speciality = require("../models/specialityModel");
 const moment = require("moment");
 require("dotenv").config();
+const mongoose = require("mongoose")
 
 const userRegistration = async (req, res) => {
   try {
@@ -464,6 +465,77 @@ const makeAppointment = async (req, res) => {
   }
 };
 
+const appointmentList = async (req, res) => {
+  try {
+    
+    const id = req.query.id;
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 2;
+    const startIndex = (page - 1) * limit;
+    // const endIndex = page * limit;
+
+    const data = await AppointmentModel.aggregate([
+      {
+        $match: {
+          // Match appointments for a specific user id
+          user: new mongoose.Types.ObjectId(id),
+        },
+      },
+      {
+        $lookup: {
+          from: "doctors",
+          localField: "doctor",
+          foreignField: "_id",
+          as: "doctorDetails",
+        },
+      },
+      {
+        $unwind: "$doctorDetails",
+      },
+      {
+        $sort: { createdAt: -1 },
+      },
+      {
+        $skip: startIndex,
+      },
+      {
+        $limit: limit,
+      },
+    ]);
+
+    // Format dates using moment
+    const formattedData = data.map((appointment) => ({
+      ...appointment,
+      createdAt: moment(new Date(appointment.createdAt)).format("YYYY-MM-DD "),
+      consultationDate: moment(new Date(appointment.consultationDate)).format(
+        "YYYY-MM-DD "
+      ),
+    }));
+
+    const date = new Date();
+    const currentDate = moment(date).format("YYYY MM DD");
+    const currentTime = moment(date).format("HH:mm");
+
+    const totalItems = await AppointmentModel.countDocuments({ user: id });
+
+    const results = {
+      data: formattedData,
+      currentDate: currentDate,
+      currentTime: currentTime,
+      pagination: {
+        currentPage: page,
+        totalPages: Math.ceil(totalItems / limit),
+        totalItems: totalItems,
+      },
+    };
+
+    res.status(200).json(results);
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+};
+
 module.exports = {
   userRegistration,
   otpVerify,
@@ -479,4 +551,5 @@ module.exports = {
   slotList,
   makePayment,
   makeAppointment,
+  appointmentList,
 };
