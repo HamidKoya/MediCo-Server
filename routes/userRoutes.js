@@ -17,5 +17,6 @@ router.get('/slotList',userController.slotList)
 router.post('/makePayment',userController.makePayment)
 router.post('/makeAppointment',userController.makeAppointment)
 router.get('/appointmentList',userController.appointmentList)
+router.post('/wallet',userController.wallet)
 
 module.exports = router

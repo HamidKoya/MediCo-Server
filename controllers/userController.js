@@ -536,6 +536,17 @@ const appointmentList = async (req, res) => {
   }
 };
 
+const wallet = async (req, res) => {
+  try {
+    const {userId} = req.body
+    const user = await User.findById(userId)
+    const amount = user.wallet
+    res.status(200).json(amount)
+  } catch (error) {
+    console.log(error.message);
+  }
+}
+
 module.exports = {
   userRegistration,
   otpVerify,
@@ -552,4 +563,5 @@ module.exports = {
   makePayment,
   makeAppointment,
   appointmentList,
+  wallet
 };
