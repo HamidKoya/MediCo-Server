@@ -13,7 +13,7 @@ const nodemailer = require("nodemailer");
 const Speciality = require("../models/specialityModel");
 const moment = require("moment");
 require("dotenv").config();
-const mongoose = require("mongoose")
+const mongoose = require("mongoose");
 
 const userRegistration = async (req, res) => {
   try {
@@ -467,7 +467,6 @@ const makeAppointment = async (req, res) => {
 
 const appointmentList = async (req, res) => {
   try {
-    
     const id = req.query.id;
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 2;
@@ -538,14 +537,87 @@ const appointmentList = async (req, res) => {
 
 const wallet = async (req, res) => {
   try {
-    const {userId} = req.body
-    const user = await User.findById(userId)
-    const amount = user.wallet
-    res.status(200).json(amount)
+    const { userId } = req.body;
+    const user = await User.findById(userId);
+    const amount = user.wallet;
+    res.status(200).json(amount);
   } catch (error) {
     console.log(error.message);
   }
-}
+};
+
+const walletPayment = async (req, res) => {
+  try {
+    const price = 299;
+    const { userId, id, select, date } = req.body;
+    const userData = await User.findById(userId);
+    if (!userData) {
+      res.status(404).json({ message: "User not found" });
+      return;
+    }
+    if (userData.wallet < price) {
+      res.status(200).json({ message: "Insufficient Balance" });
+    } else {
+      let newWalletAmount = userData.wallet - price;
+      await User.findByIdAndUpdate(userId, { wallet: newWalletAmount });
+
+      const selectDate = moment(date);
+
+      const payment = new Payment({
+        doctor: id,
+        user: userId,
+        price: price,
+      });
+
+      const paymentData = await payment.save();
+
+      const updatedDoctor = await Doctor.findOneAndUpdate(
+        { _id: id, "slots.timeSlots.objectId": select },
+        { $set: { "slots.$[outer].timeSlots.$[inner].booked": true } },
+        {
+          arrayFilters: [
+            { "outer._id": { $exists: true } },
+            { "inner.objectId": select },
+          ],
+          new: true, // Return the modified document
+        }
+      );
+
+      const selectedSlot = updatedDoctor.slots.reduce((found, ts) => {
+        const slot = ts.timeSlots.find((item) => item.objectId === select);
+        if (slot) {
+          found = slot;
+        }
+        return found;
+      }, null);
+
+      const appointment = new AppointmentModel({
+        doctor: id,
+        user: userId,
+        paymentId: paymentData._id,
+        slotId: select,
+        consultationDate: selectDate,
+        start: selectedSlot.start,
+        end: selectedSlot.end,
+      });
+
+      const appointmentData = await appointment.save();
+
+      const notification = new NotificationModel({
+        text: "Your appointment successfully done",
+        userId: userId,
+      });
+
+      await notification.save();
+
+      res
+        .status(201)
+        .json({ paymentData, appointmentData, message: "Payment is success" });
+    }
+  } catch (error) {
+    console.log(error.message);
+  }
+};
 
 module.exports = {
   userRegistration,
@@ -563,5 +635,6 @@ module.exports = {
   makePayment,
   makeAppointment,
   appointmentList,
-  wallet
+  wallet,
+  walletPayment,
 };
