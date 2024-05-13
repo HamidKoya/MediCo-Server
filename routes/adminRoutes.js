@@ -21,6 +21,7 @@ router.post('/doctorDetails',adminController.doctorDetails)
 router.patch('/doctorblockUnblock',adminController.blockApprove)
 
 router.get('/appointmentList',adminController.appointmentList)
+router.post('/appData',adminController.appointmentData)
 
 
 module.exports = router

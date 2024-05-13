@@ -4,7 +4,8 @@ const User = require("../models/userModel.js");
 const cloudinary = require("../utils/cloudinary.js");
 const Speciality = require("../models/specialityModel.js");
 const Doctor = require("../models/doctorModel.js");
-const Appointment = require("../models/appointmentModel.js")
+const Appointment = require("../models/appointmentModel.js");
+const mongoose = require("mongoose");
 
 const login = async (req, res) => {
   try {
@@ -396,6 +397,53 @@ const appointmentList = async (req, res) => {
   }
 };
 
+const appointmentData = async (req, res) => {
+  try {
+    const { appoId } = req.body;
+
+    const data = await Appointment.aggregate([
+      {
+        $match: {
+          _id: new mongoose.Types.ObjectId(appoId), // Assuming you are using Mongoose and appoId is a valid MongoDB ObjectId
+        },
+      },
+      {
+        $lookup: {
+          from: "users",
+          localField: "user",
+          foreignField: "_id",
+          as: "userDetails",
+        },
+      },
+      {
+        $unwind: "$userDetails", // Unwind the userDetails array
+      },
+      {
+        $lookup: {
+          from: "doctors",
+          localField: "doctor",
+          foreignField: "_id",
+          as: "doctorDetails",
+        },
+      },
+      {
+        $unwind: "$doctorDetails", // Unwind the doctorDetails array
+      },
+      {
+        $project: {
+          _id: 0, // Exclude the _id field
+          userName: "$userDetails.name", // Rename user name field
+          doctorName: "$doctorDetails.name", // Rename doctor name field
+        },
+      },
+    ]);
+    res.status(200).json({ data });
+  } catch (error) {
+    console.log(error.message);
+    res.status(500).json({ message: "Internal Server Error" });
+  }
+};
+
 module.exports = {
   login,
   usersList,
@@ -412,4 +460,5 @@ module.exports = {
   doctorDetails,
   blockApprove,
   appointmentList,
+  appointmentData,
 };
