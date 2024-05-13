@@ -20,5 +20,7 @@ router.get('/doctorList',adminController.doctorList)
 router.post('/doctorDetails',adminController.doctorDetails)
 router.patch('/doctorblockUnblock',adminController.blockApprove)
 
+router.get('/appointmentList',adminController.appointmentList)
+
 
 module.exports = router

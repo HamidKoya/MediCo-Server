@@ -4,6 +4,7 @@ const User = require("../models/userModel.js");
 const cloudinary = require("../utils/cloudinary.js");
 const Speciality = require("../models/specialityModel.js");
 const Doctor = require("../models/doctorModel.js");
+const Appointment = require("../models/appointmentModel.js")
 
 const login = async (req, res) => {
   try {
@@ -347,8 +348,8 @@ const doctorDetails = async (req, res) => {
 
 const blockApprove = async (req, res) => {
   try {
-    const { userId } = req.body
- 
+    const { userId } = req.body;
+
     const doctor = await Doctor.findOne({ _id: userId });
 
     const blocked = doctor.is_blocked;
@@ -367,6 +368,34 @@ const blockApprove = async (req, res) => {
   }
 };
 
+const appointmentList = async (req, res) => {
+  try {
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 10;
+
+    const totalItems = await Appointment.countDocuments(); // Calculate total items
+
+    const data = await Appointment.find()
+      .sort({ createdAt: -1 }) // Sort by createdAt in descending order (latest first)
+      .skip((page - 1) * limit)
+      .limit(limit);
+
+    const results = {
+      data: data,
+      pagination: {
+        currentPage: page,
+        totalPages: Math.ceil(totalItems / limit),
+        totalItems: totalItems,
+      },
+    };
+
+    res.status(200).json(results);
+  } catch (error) {
+    console.error(error.message); // Log error for debugging
+    res.status(500).json({ error: "Failed to fetch appointments" }); // Send error response
+  }
+};
+
 module.exports = {
   login,
   usersList,
@@ -382,4 +411,5 @@ module.exports = {
   doctorList,
   doctorDetails,
   blockApprove,
+  appointmentList,
 };
