@@ -1,7 +1,9 @@
 const express = require("express");
+const socketConnection = require('./socketIo')
 const dotenv = require("dotenv");
 const cookieParser = require("cookie-parser");
 const cors = require("cors");
+const http = require('http')
 dotenv.config();
 const Connection = require("./config/dbConfig");
 
@@ -43,6 +45,9 @@ app.use((err, req, res, next) => {
     statusCode,
   });
 });
+
+const server = http.createServer(app)
+socketConnection(server)
 
 app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);
