@@ -29,10 +29,18 @@ app.use(
 
 const userRoute = require("./routes/userRoutes");
 app.use("/", userRoute);
+
 const adminRoute = require("./routes/adminRoutes")
 app.use("/admin",adminRoute)
+
 const doctorRoute = require("./routes/doctorRoutes")
 app.use("/doctor",doctorRoute)
+
+const chatRoute = require("./routes/chatRoutes")
+app.use("/chat",chatRoute)
+
+const messageRoute = require("./routes/messageRoutes")
+app.use("/message",messageRoute)
 
 Connection();
 
