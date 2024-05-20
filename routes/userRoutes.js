@@ -20,4 +20,6 @@ router.get('/appointmentList',userController.appointmentList)
 router.post('/wallet',userController.wallet)
 router.post('/walletPayment',userController.walletPayment)
 
+router.post('/createChat',userController.createChat)
+
 module.exports = router

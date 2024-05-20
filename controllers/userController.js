@@ -4,6 +4,7 @@ const Otp = require("../models/userOtpModel");
 const Payment = require("../models/paymentModel");
 const AppointmentModel = require("../models/appointmentModel");
 const NotificationModel = require("../models/notificationModel");
+const ChatModal = require("../models/chatModel.js");
 const securePassword = require("../utils/securePassword");
 const cloudinary = require("../utils/cloudinary");
 const sendEmail = require("../utils/nodeMailer");
@@ -619,6 +620,34 @@ const walletPayment = async (req, res) => {
   }
 };
 
+const createChat = async (req, res) => {
+  try {
+    const { userid, doctorid } = req.body;
+
+    const chatExist = await ChatModal.findOne({
+      members: { $all: [userid, doctorid] },
+    });
+    if (!chatExist) {
+      const newChat = new ChatModal({
+        members: [userid.toString(), doctorid.toString()],
+      });
+      await newChat.save();
+      res.status(200).json({ message: "Your are connected" });
+    }
+
+    const notification = new NotificationModel({
+      text: "Your chat created successfully",
+      userId: userid,
+    });
+
+    await notification.save();
+
+    res.status(200).json({ message: "You are connected" });
+  } catch (error) {
+    console.log(error.message);
+  }
+};
+
 module.exports = {
   userRegistration,
   otpVerify,
@@ -637,4 +666,5 @@ module.exports = {
   appointmentList,
   wallet,
   walletPayment,
+  createChat,
 };
