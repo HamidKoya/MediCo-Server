@@ -11,7 +11,6 @@ function socketConnection(server) {
   });
 
   io.on("connection", (socket) => {
-    console.log("connection", socket.id);
     let activeUsers = [];
 
     socket.on("disconnect", () => {
@@ -33,7 +32,6 @@ function socketConnection(server) {
     });
 
     socket.on("send_message", (data) => {
-      console.log(data);
       socket.to(123).emit("recieve_message", data);
     });
   });
