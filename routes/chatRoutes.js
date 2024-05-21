@@ -4,5 +4,6 @@ const chatController = require("../controllers/chatController.js");
 
 chatRoute.get("/chat/:userId", chatController.userChats);
 chatRoute.get('/doctorData/:doctorId',chatController.doctorData)
+chatRoute.get('/userData/:userId',chatController.userData)
 
 module.exports = chatRoute;

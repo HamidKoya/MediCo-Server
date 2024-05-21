@@ -11,6 +11,8 @@ const { ObjectId } = require("mongodb");
 const moment = require("moment");
 const AppointmentModel = require("../models/appointmentModel.js");
 const mongoose = require("mongoose");
+const chatModal = require("../models/chatModel.js");
+const NotificationModel = require("../models/notificationModel.js");
 
 const signup = async (req, res) => {
   try {
@@ -501,6 +503,33 @@ const appointmentList = async (req, res) => {
   }
 };
 
+const createChat = async (req, res) => {
+  try {
+    const { userid, doctorid } = req.body;
+
+    const chatExist = await chatModal.findOne({
+      members: { $all: [userid, doctorid] },
+    });
+    if (!chatExist) {
+      const newChat = new chatModal({
+        members: [userid.toString(), doctorid.toString()],
+      });
+      await newChat.save();
+      res.status(200).json({ message: "Your are connected" });
+    }
+    const notification = new NotificationModel({
+      text: "Doctor created a chat room with you ",
+      userId: userid,
+    });
+
+    await notification.save();
+
+    res.status(200).json({ message: "You are connected" });
+  } catch (error) {
+    console.log(error.message);
+  }
+};
+
 module.exports = {
   signup,
   specialtyName,
@@ -514,4 +543,5 @@ module.exports = {
   slotCreation,
   slotDetails,
   appointmentList,
+  createChat,
 };

@@ -58,9 +58,21 @@ const doctorData = async (req, res) => {
   }
 };
 
+const userData = async (req, res) => {
+  try {
+    const { userId } = req.params;
 
+    const result = await User.findOne({ _id: userId });
+
+    res.status(200).json(result);
+  } catch (error) {
+    console.log(error.message);
+    return res.status(500).json({ message: "Internal Server Error" });
+  }
+};
 
 module.exports = {
   userChats,
   doctorData,
+  userData
 };
