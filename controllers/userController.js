@@ -473,7 +473,6 @@ const appointmentList = async (req, res) => {
     const limit = parseInt(req.query.limit) || 2;
     const startIndex = (page - 1) * limit;
     // const endIndex = page * limit;
-    console.log(page);
     const data = await AppointmentModel.aggregate([
       {
         $match: {
@@ -502,9 +501,6 @@ const appointmentList = async (req, res) => {
         $limit: limit,
       },
     ]);
-    console.log(data);
-    console.log("-------------------------------------------");
-
     // Format dates using moment
     const formattedData = data.map((appointment) => ({
       ...appointment,
