@@ -469,11 +469,11 @@ const makeAppointment = async (req, res) => {
 const appointmentList = async (req, res) => {
   try {
     const id = req.query.id;
-    const page = parseInt(req.query.page) || 1;
+    const page = parseInt(req.query.currentPage) || 1;
     const limit = parseInt(req.query.limit) || 2;
     const startIndex = (page - 1) * limit;
     // const endIndex = page * limit;
-
+    console.log(page);
     const data = await AppointmentModel.aggregate([
       {
         $match: {
@@ -502,6 +502,8 @@ const appointmentList = async (req, res) => {
         $limit: limit,
       },
     ]);
+    console.log(data);
+    console.log("-------------------------------------------");
 
     // Format dates using moment
     const formattedData = data.map((appointment) => ({
@@ -528,7 +530,7 @@ const appointmentList = async (req, res) => {
         totalItems: totalItems,
       },
     };
-
+    
     res.status(200).json(results);
   } catch (error) {
     console.log(error);
