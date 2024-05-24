@@ -554,6 +554,61 @@ const markAsDone = async (req, res) => {
   }
 };
 
+const reschedule = async (req, res) => {
+  try {
+    const { date, startTime, endTime, appoId, userId } = req.body;
+    
+    // Convert start time to 24-hour format
+    const startDateTime = new Date(`${date} ${startTime}`);
+    const formattedStart = startDateTime.toLocaleTimeString("en-US", {
+      hour12: false,
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+
+    // Convert end time to 24-hour format
+    const endDateTime = new Date(`${date} ${endTime}`);
+    const formattedEnd = endDateTime.toLocaleTimeString("en-US", {
+      hour12: false,
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+
+    // Format the date using moment
+    const formattedDate = moment(date).format("YYYY-MM-DD");
+
+    // Update the appointment
+    const updatedAppointment = await AppointmentModel.findOneAndUpdate(
+      { _id: appoId },
+      {
+        $set: {
+          consultationDate: formattedDate,
+          start: formattedStart,
+          end: formattedEnd,
+          rescheduled: true,
+        },
+      },
+      { new: true }
+    );
+
+    if (!updatedAppointment) {
+      return res.status(404).json({ message: "Appointment not found" });
+    }
+
+    const notification = new NotificationModel({
+      text: "Your appointment has been rescheduled by doctor ",
+      userId: userId,
+    });
+
+    await notification.save();
+
+    res.status(200).json({ message: "Appointment rescheduled successfully" });
+  } catch (error) {
+    console.log(error.message);
+    res.status(500).json({ message: "Internal server error" });
+  }
+};
+
 module.exports = {
   signup,
   specialtyName,
@@ -568,5 +623,6 @@ module.exports = {
   slotDetails,
   appointmentList,
   createChat,
-  markAsDone
+  markAsDone,
+  reschedule
 };

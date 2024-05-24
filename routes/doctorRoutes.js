@@ -16,6 +16,7 @@ router.post('/slotDetails',doctorController.slotDetails)
 router.get('/appointmentList',doctorController.appointmentList)
 router.post('/createChat',doctorController.createChat)
 router.patch('/markAsDone',doctorController.markAsDone)
+router.patch('/reSchedule',doctorController.reschedule)
 
 
 
