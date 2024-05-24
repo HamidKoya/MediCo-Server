@@ -530,6 +530,30 @@ const createChat = async (req, res) => {
   }
 };
 
+const markAsDone = async (req, res) => {
+  try {
+    const { id, userId } = req.query;
+
+    const result = await AppointmentModel.findByIdAndUpdate(
+      id,
+      { $set: { status: "Done" } },
+      { new: true } // Return the updated document
+    );
+
+    const notification = new NotificationModel({
+      text: "Your appointment marked as done ",
+      userId: userId,
+    });
+
+    await notification.save();
+
+    res.status(200).json({ success: true, data: result });
+  } catch (error) {
+    console.log(error.message);
+    res.status(500).json({ success: false, error: error.message });
+  }
+};
+
 module.exports = {
   signup,
   specialtyName,
@@ -544,4 +568,5 @@ module.exports = {
   slotDetails,
   appointmentList,
   createChat,
+  markAsDone
 };
