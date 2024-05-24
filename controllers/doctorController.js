@@ -13,6 +13,8 @@ const AppointmentModel = require("../models/appointmentModel.js");
 const mongoose = require("mongoose");
 const chatModal = require("../models/chatModel.js");
 const NotificationModel = require("../models/notificationModel.js");
+const Payment = require("../models/paymentModel.js")
+const User = require("../models/userModel.js")
 
 const signup = async (req, res) => {
   try {
@@ -557,7 +559,7 @@ const markAsDone = async (req, res) => {
 const reschedule = async (req, res) => {
   try {
     const { date, startTime, endTime, appoId, userId } = req.body;
-    
+
     // Convert start time to 24-hour format
     const startDateTime = new Date(`${date} ${startTime}`);
     const formattedStart = startDateTime.toLocaleTimeString("en-US", {
@@ -609,6 +611,68 @@ const reschedule = async (req, res) => {
   }
 };
 
+const cancelAppointment = async (req, res) => {
+  try {
+    const { appoId, paymentId, userId } = req.body;
+    // Delete the payment
+    await Payment.findByIdAndDelete(paymentId);
+
+    await AppointmentModel.findByIdAndUpdate(
+      appoId,
+      { $set: { status: "CancelledByDoctor" } },
+      { new: true }
+    );
+
+    const data = await AppointmentModel.aggregate([
+      {
+        $lookup: {
+          from: "doctors",
+          localField: "doctor",
+          foreignField: "_id",
+          as: "doctorDetails",
+        },
+      },
+      {
+        $unwind: "$doctorDetails",
+      },
+    ]);
+    const appointment = data.find(
+      (appointment) => appointment._id.toString() === appoId
+    );
+
+    // Update the booked field to false in the timeSlots array
+    appointment.doctorDetails.slots[0].timeSlots.forEach((timeSlot) => {
+      timeSlot.booked = false;
+    });
+
+    // Save the updated doctorDetails back to the database
+    await Doctor.findByIdAndUpdate(
+      appointment.doctorDetails._id,
+      { $set: { slots: appointment.doctorDetails.slots } },
+      { new: true }
+    );
+
+    // Refund the user's wallet
+    await User.findByIdAndUpdate(
+      userId,
+      { $inc: { wallet: 299 } },
+      { new: true }
+    );
+
+    const notification = new NotificationModel({
+      text: "Your appointment cancelled by doctor ",
+      userId: userId,
+    });
+
+    await notification.save();
+
+    res.status(200).json({ message: "Appointment cancelled successfully" });
+  } catch (error) {
+    console.log(error.message);
+    res.status(500).json({ message: "Internal server error" });
+  }
+};
+
 module.exports = {
   signup,
   specialtyName,
@@ -624,5 +688,6 @@ module.exports = {
   appointmentList,
   createChat,
   markAsDone,
-  reschedule
+  reschedule,
+  cancelAppointment
 };
