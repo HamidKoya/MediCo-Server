@@ -15,7 +15,8 @@ const chatModal = require("../models/chatModel.js");
 const NotificationModel = require("../models/notificationModel.js");
 const Payment = require("../models/paymentModel.js");
 const User = require("../models/userModel.js");
-const Prescription = require("../models/prescriptionModel.js")
+const Prescription = require("../models/prescriptionModel.js");
+const MedicalReportModel = require("../models/medicalReportModel.js")
 
 const signup = async (req, res) => {
   try {
@@ -717,6 +718,47 @@ const addPriscription = async (req, res) => {
   }
 };
 
+const addMedicalReport = async (req, res) => {
+  try {
+    const { values, appoDate, appoId, drName, userId, userName } = req.body;
+
+    const existingMedicalReport = await MedicalReportModel.findOne({
+      appointmentId: appoId,
+    });
+
+    if (existingMedicalReport) {
+      return res.status(400).json({ message: "Medical Report already added" });
+    }
+
+    const medicalReport = new MedicalReportModel({
+      patientName: userName,
+      doctorName: drName,
+      date: appoDate,
+      age: values.age,
+      gender: values.gender,
+      weight: values.weight,
+      medicalHistory: values.history,
+      complaint: values.complaint,
+      diagnosis: values.diagnosis,
+      appointmentId: appoId,
+      investigation: values.investigation,
+      additionalInfo: values.additionalInfo,
+    });
+    await medicalReport.save();
+
+    const notification = new NotificationModel({
+      text: "Your medical report added by doctor ",
+      userId: userId,
+    });
+
+    await notification.save();
+
+    res.status(200).json({ message: "Medical Report added" });
+  } catch (error) {
+    console.log(error);
+  }
+};
+
 module.exports = {
   signup,
   specialtyName,
@@ -734,5 +776,6 @@ module.exports = {
   markAsDone,
   reschedule,
   cancelAppointment,
-  addPriscription
+  addPriscription,
+  addMedicalReport
 };

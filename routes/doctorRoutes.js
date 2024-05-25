@@ -19,6 +19,7 @@ router.patch('/markAsDone',doctorController.markAsDone)
 router.patch('/reSchedule',doctorController.reschedule)
 router.patch('/cancelAppointment',doctorController.cancelAppointment)
 router.post('/prescription',doctorController.addPriscription)
+router.post('/addMedicalReport',doctorController.addMedicalReport)
 
 
 
