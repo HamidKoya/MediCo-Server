@@ -13,8 +13,9 @@ const AppointmentModel = require("../models/appointmentModel.js");
 const mongoose = require("mongoose");
 const chatModal = require("../models/chatModel.js");
 const NotificationModel = require("../models/notificationModel.js");
-const Payment = require("../models/paymentModel.js")
-const User = require("../models/userModel.js")
+const Payment = require("../models/paymentModel.js");
+const User = require("../models/userModel.js");
+const Prescription = require("../models/prescriptionModel.js")
 
 const signup = async (req, res) => {
   try {
@@ -673,6 +674,49 @@ const cancelAppointment = async (req, res) => {
   }
 };
 
+const addPriscription = async (req, res) => {
+  console.log(req.body);
+  try {
+    const { date, start, end, userId, drId, note, medicines, appoId } =
+      req.body;
+    // Basic validation checks
+    if (!date || !start || !end || !userId || !drId || !note || !medicines) {
+      return res.status(400).json({ message: "Missing required fields" });
+    }
+
+    const user = await User.findById(userId);
+    const doctor = await Doctor.findById(drId);
+
+    // Check if user and doctor exist
+    if (!user || !doctor) {
+      return res.status(404).json({ message: "User or Doctor not found" });
+    }
+
+    const prescription = new Prescription({
+      doctorName: doctor.name,
+      userName: user.name,
+      medicines: medicines,
+      date: moment(date).format("YYYY MM DD"),
+      note: note,
+      appointmentId: appoId,
+    });
+
+    await prescription.save();
+
+    const notification = new NotificationModel({
+      text: "Your prescription added by doctor",
+      userId: userId,
+    });
+
+    await notification.save();
+
+    res.status(200).json({ message: "Prescription added" });
+  } catch (error) {
+    console.error(error.message);
+    res.status(500).json({ message: "Internal Server Error" });
+  }
+};
+
 module.exports = {
   signup,
   specialtyName,
@@ -689,5 +733,6 @@ module.exports = {
   createChat,
   markAsDone,
   reschedule,
-  cancelAppointment
+  cancelAppointment,
+  addPriscription
 };

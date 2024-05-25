@@ -18,6 +18,7 @@ router.post('/createChat',doctorController.createChat)
 router.patch('/markAsDone',doctorController.markAsDone)
 router.patch('/reSchedule',doctorController.reschedule)
 router.patch('/cancelAppointment',doctorController.cancelAppointment)
+router.post('/prescription',doctorController.addPriscription)
 
 
 
