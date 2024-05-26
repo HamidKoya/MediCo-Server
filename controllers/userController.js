@@ -526,7 +526,7 @@ const appointmentList = async (req, res) => {
         totalItems: totalItems,
       },
     };
-    
+
     res.status(200).json(results);
   } catch (error) {
     console.log(error);
@@ -646,6 +646,80 @@ const createChat = async (req, res) => {
   }
 };
 
+const cancelAppointment = async (req, res) => {
+  try {
+    const { id, userId, paymentId } = req.body;
+    // Delete the payment
+    await Payment.findByIdAndDelete(paymentId);
+
+    // Update the appointment status to Cancelled
+    await AppointmentModel.findByIdAndUpdate(
+      id,
+      { $set: { status: "Cancelled" } },
+      { new: true }
+    );
+
+    const data = await AppointmentModel.aggregate([
+      {
+        $lookup: {
+          from: "doctors",
+          localField: "doctor",
+          foreignField: "_id",
+          as: "doctorDetails",
+        },
+      },
+      {
+        $unwind: "$doctorDetails",
+      },
+    ]);
+
+    // Find the appointment in the data
+    const appointment = data.find(
+      (appointment) => appointment._id.toString() === id
+    );
+
+    // Update the booked field to false in the timeSlots array
+    appointment.doctorDetails.slots[0].timeSlots.forEach((timeSlot) => {
+      timeSlot.booked = false;
+    });
+
+    // Save the updated doctorDetails back to the database
+    await Doctor.findByIdAndUpdate(
+      appointment.doctorDetails._id,
+      { $set: { slots: appointment.doctorDetails.slots } },
+      { new: true }
+    );
+
+    // Refund the user's wallet
+    await User.findByIdAndUpdate(
+      userId,
+      { $inc: { wallet: 299 } },
+      { new: true }
+    );
+
+    const cancellationNotification = new NotificationModel({
+      text: "Your appointment has been cancelled successfully.",
+      userId: userId,
+    });
+
+    // Save the appointment cancellation notification
+    await cancellationNotification.save();
+
+    const creditNotification = new NotificationModel({
+      text: "Amount credited to your wallet.",
+      userId: userId,
+    });
+
+    // Save the amount credited notification
+    await creditNotification.save();
+
+    res.status(200).json({ message: "Appointment cancelled successfully" });
+  } catch (error) {
+    console.error(error.message);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+};
+
 module.exports = {
   userRegistration,
   otpVerify,
@@ -665,4 +739,5 @@ module.exports = {
   wallet,
   walletPayment,
   createChat,
+  cancelAppointment,
 };
