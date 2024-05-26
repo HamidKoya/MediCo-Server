@@ -6,6 +6,7 @@ const AppointmentModel = require("../models/appointmentModel");
 const NotificationModel = require("../models/notificationModel");
 const ChatModal = require("../models/chatModel.js");
 const PrescriptionModel = require("../models/prescriptionModel.js")
+const MedicalReport = require("../models/medicalReportModel.js")
 const securePassword = require("../utils/securePassword");
 const cloudinary = require("../utils/cloudinary");
 const sendEmail = require("../utils/nodeMailer");
@@ -778,6 +779,19 @@ const medicineDetails = async (req, res) => {
   }
 };
 
+const medicalReport = async (req, res) => {
+  try {
+    const { id } = req.query
+    const result = await MedicalReport.findOne({ appointmentId: id })
+
+    res.status(200).json({ result })
+
+} catch (error) {
+    console.log(error);
+    res.status(500).json({ error: 'Internal Server Error' });
+}
+}
+
 module.exports = {
   userRegistration,
   otpVerify,
@@ -799,5 +813,6 @@ module.exports = {
   createChat,
   cancelAppointment,
   addReview,
-  medicineDetails
+  medicineDetails,
+  medicalReport
 };
