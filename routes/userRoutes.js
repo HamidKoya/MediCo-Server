@@ -21,5 +21,6 @@ router.post('/wallet',userController.wallet)
 router.post('/walletPayment',userController.walletPayment)
 router.post('/createChat',userController.createChat)
 router.post('/cancelAppointment',userController.cancelAppointment)
+router.post('/addReview',userController.addReview)
 
 module.exports = router
