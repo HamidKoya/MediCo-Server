@@ -24,5 +24,6 @@ router.post('/cancelAppointment',userController.cancelAppointment)
 router.post('/addReview',userController.addReview)
 router.get('/medicineDetails',userController.medicineDetails)
 router.get('/medicalReport',userController.medicalReport)
+router.get('/getReview',userController.getReview)
 
 module.exports = router

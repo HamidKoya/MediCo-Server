@@ -5,8 +5,8 @@ const Payment = require("../models/paymentModel");
 const AppointmentModel = require("../models/appointmentModel");
 const NotificationModel = require("../models/notificationModel");
 const ChatModal = require("../models/chatModel.js");
-const PrescriptionModel = require("../models/prescriptionModel.js")
-const MedicalReport = require("../models/medicalReportModel.js")
+const PrescriptionModel = require("../models/prescriptionModel.js");
+const MedicalReport = require("../models/medicalReportModel.js");
 const securePassword = require("../utils/securePassword");
 const cloudinary = require("../utils/cloudinary");
 const sendEmail = require("../utils/nodeMailer");
@@ -781,16 +781,50 @@ const medicineDetails = async (req, res) => {
 
 const medicalReport = async (req, res) => {
   try {
-    const { id } = req.query
-    const result = await MedicalReport.findOne({ appointmentId: id })
+    const { id } = req.query;
+    const result = await MedicalReport.findOne({ appointmentId: id });
 
-    res.status(200).json({ result })
-
-} catch (error) {
+    res.status(200).json({ result });
+  } catch (error) {
     console.log(error);
-    res.status(500).json({ error: 'Internal Server Error' });
-}
-}
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+};
+
+const getReview = async (req, res) => {
+  try {
+    const { id } = req.query;
+    const doctor = await Doctor.findById(id).populate({
+      path: "review.postedBy",
+      model: "User",
+      select: "name email photo", // You can choose which user details to select
+    });
+
+
+    if (!doctor) {
+      return res.status(404).json({ error: "Doctor not found" });
+    }
+
+    // Sort reviews by the 'postedDate' property in descending order
+    doctor.review.sort((a, b) => b.postedDate - a.postedDate);
+
+    const reviewDetails = doctor.review.map((review) => ({
+      text: review.text,
+      star: review.star,
+      postedBy: {
+        name: review.postedBy.name,
+        email: review.postedBy.email,
+        photo: review.postedBy.photo,
+      },
+      postedDate: review.postedDate,
+    }));
+
+    res.status(200).json({ reviews: reviewDetails });
+  } catch (error) {
+    console.log(error.message);
+    res.status(500).json({ message: "Internal server error" });
+  }
+};
 
 module.exports = {
   userRegistration,
@@ -814,5 +848,6 @@ module.exports = {
   cancelAppointment,
   addReview,
   medicineDetails,
-  medicalReport
+  medicalReport,
+  getReview,
 };
