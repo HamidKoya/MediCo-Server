@@ -800,7 +800,6 @@ const getReview = async (req, res) => {
       select: "name email photo", // You can choose which user details to select
     });
 
-
     if (!doctor) {
       return res.status(404).json({ error: "Doctor not found" });
     }
@@ -822,6 +821,33 @@ const getReview = async (req, res) => {
     res.status(200).json({ reviews: reviewDetails });
   } catch (error) {
     console.log(error.message);
+    res.status(500).json({ message: "Internal server error" });
+  }
+};
+
+const getNotifications = async (req, res) => {
+  try {
+    const { id } = req.query;
+    const page = req.query.page || 1;
+    const perPage = 10;
+
+    const data = await NotificationModel.find({ userId: id })
+      .skip((page - 1) * perPage)
+      .limit(perPage)
+      .sort({ createdAt: -1 });
+
+    const totalNotifications = await NotificationModel.countDocuments({
+      userId: id,
+    });
+    const totalPages = Math.ceil(totalNotifications / perPage);
+
+    if (!data) {
+      return res.status(404).json({ message: "Notification not found" });
+    }
+
+    res.status(200).json({ notifications: data, totalPages });
+  } catch (error) {
+    console.log(error);
     res.status(500).json({ message: "Internal server error" });
   }
 };
@@ -850,4 +876,5 @@ module.exports = {
   medicineDetails,
   medicalReport,
   getReview,
+  getNotifications,
 };
