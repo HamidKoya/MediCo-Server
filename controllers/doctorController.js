@@ -16,7 +16,7 @@ const NotificationModel = require("../models/notificationModel.js");
 const Payment = require("../models/paymentModel.js");
 const User = require("../models/userModel.js");
 const Prescription = require("../models/prescriptionModel.js");
-const MedicalReportModel = require("../models/medicalReportModel.js")
+const MedicalReportModel = require("../models/medicalReportModel.js");
 
 const signup = async (req, res) => {
   try {
@@ -759,6 +759,40 @@ const addMedicalReport = async (req, res) => {
   }
 };
 
+const getReviews = async (req, res) => {
+  try {
+    const { id } = req.query;
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 10;
+
+    const doctor = await Doctor.findById(id).populate("review.postedBy");
+
+    if (!doctor) {
+      return res.status(404).json({ error: "Doctor not found" });
+    }
+
+    // Sort reviews by the 'postedDate' property in descending order
+    doctor.review.sort((a, b) => b.postedDate - a.postedDate);
+
+    const totalItems = doctor.review.length;
+
+    const reviews = doctor.review.slice((page - 1) * limit, page * limit);
+
+    const results = {
+      data: reviews,
+      pagination: {
+        currentPage: page,
+        totalPages: Math.ceil(totalItems / limit),
+        totalItems: totalItems,
+      },
+    };
+    res.status(200).json(results);
+  } catch (error) {
+    console.error(error); // Log the error
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+};
+
 module.exports = {
   signup,
   specialtyName,
@@ -777,5 +811,6 @@ module.exports = {
   reschedule,
   cancelAppointment,
   addPriscription,
-  addMedicalReport
+  addMedicalReport,
+  getReviews,
 };

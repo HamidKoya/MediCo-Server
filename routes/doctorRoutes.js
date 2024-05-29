@@ -20,6 +20,7 @@ router.patch('/reSchedule',doctorController.reschedule)
 router.patch('/cancelAppointment',doctorController.cancelAppointment)
 router.post('/prescription',doctorController.addPriscription)
 router.post('/addMedicalReport',doctorController.addMedicalReport)
+router.get('/getReviews',doctorController.getReviews)
 
 
 
