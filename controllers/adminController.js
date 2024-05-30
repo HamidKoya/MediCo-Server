@@ -5,6 +5,7 @@ const cloudinary = require("../utils/cloudinary.js");
 const Speciality = require("../models/specialityModel.js");
 const Doctor = require("../models/doctorModel.js");
 const Appointment = require("../models/appointmentModel.js");
+const Payment = require("../models/paymentModel.js");
 const mongoose = require("mongoose");
 
 const login = async (req, res) => {
@@ -444,6 +445,115 @@ const appointmentData = async (req, res) => {
   }
 };
 
+const counts = async (req, res) => {
+  try {
+    const doctor = await Doctor.countDocuments();
+
+    const user = await User.countDocuments();
+
+    const totalAmount = await Payment.aggregate([
+      {
+        $group: {
+          _id: null,
+          total: { $sum: { $toDouble: "$price" } },
+        },
+      },
+    ]);
+
+    const total = totalAmount.length > 0 ? Math.round(totalAmount[0].total) : 0;
+
+    const thirtyPercent = Math.round(total * 0.3);
+
+    res.status(200).json({ doctor, user, total, thirtyPercent });
+  } catch (error) {
+    console.log(error.message);
+    res.status(500).json({ message: "Internal server error" });
+  }
+};
+
+const adminReport = async (req, res) => {
+  try {
+    const currentDate = new Date();
+    // const currentMonth = currentDate.getMonth() + 1;
+    const monthName = currentDate.toLocaleString("default", { month: "long" });
+    let date = new Date();
+    let year = date.getFullYear();
+    let currentYear = new Date(year, 0, 1);
+    let users = [];
+    let usersByYear = await User.aggregate([
+      {
+        $match: { createdAt: { $gte: currentYear }, is_blocked: { $ne: true } },
+      },
+      {
+        $group: {
+          _id: { $dateToString: { format: "%m", date: "$createdAt" } },
+          count: { $sum: 1 },
+        },
+      },
+      { $sort: { _id: 1 } },
+    ]);
+    for (let i = 1; i <= 12; i++) {
+      let result = true;
+      for (let j = 0; j < usersByYear.length; j++) {
+        result = false;
+        if (usersByYear[j]._id == i) {
+          users.push(usersByYear[j]);
+          break;
+        } else {
+          result = true;
+        }
+      }
+      if (result) users.push({ _id: i, count: 0 });
+    }
+    let usersData = [];
+    for (let i = 0; i < users.length; i++) {
+      usersData.push(users[i].count);
+    }
+
+    let doctors = [];
+    let doctorsByYear = await Doctor.aggregate([
+      {
+        $match: { createdAt: { $gte: currentYear }, is_blocked: { $ne: true } },
+      },
+      {
+        $group: {
+          _id: { $dateToString: { format: "%m", date: "$createdAt" } },
+          count: { $sum: 1 },
+        },
+      },
+      { $sort: { _id: 1 } },
+    ]);
+    for (let i = 1; i <= 12; i++) {
+      let result = true;
+      for (let j = 0; j < doctorsByYear.length; j++) {
+        result = false;
+        if (doctorsByYear[j]._id == i) {
+          doctors.push(doctorsByYear[j]);
+          break;
+        } else {
+          result = true;
+        }
+      }
+      if (result) doctors.push({ _id: i, count: 0 });
+    }
+    let doctorsData = [];
+    for (let i = 0; i < doctors.length; i++) {
+      doctorsData.push(doctors[i].count);
+    }
+
+    const result = {
+      currentMonthName: monthName,
+      doctorsData,
+      usersData,
+    };
+
+    res.status(200).json(result);
+  } catch (error) {
+    console.log(error.message);
+    res.status(500).json({ status: "Internal Server Error" });
+  }
+};
+
 module.exports = {
   login,
   usersList,
@@ -461,4 +571,6 @@ module.exports = {
   blockApprove,
   appointmentList,
   appointmentData,
+  counts,
+  adminReport,
 };
