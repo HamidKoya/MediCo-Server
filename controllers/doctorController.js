@@ -793,6 +793,115 @@ const getReviews = async (req, res) => {
   }
 };
 
+const chartDetails = async (req, res) => {
+  try {
+    const { drId } = req.query;
+    const appoPending = await AppointmentModel.countDocuments({
+      doctor: drId,
+      status: "Pending",
+    });
+    const appoDone = await AppointmentModel.countDocuments({
+      doctor: drId,
+      status: "Done",
+    });
+    const appoCancelled = await AppointmentModel.countDocuments({
+      doctor: drId,
+      status: "Cancelled",
+    });
+
+    let obj = {};
+    obj.Pending = appoPending;
+    obj.Done = appoDone;
+    obj.Cancelled = appoCancelled;
+    res.status(200).json({ obj });
+  } catch (error) {
+    console.log(error.message);
+  }
+};
+
+const counts = async (req, res) => {
+  try {
+    const doctorId = req.query.doctorId;
+
+    const doctor = await Doctor.findById(doctorId);
+
+    if (!doctor) {
+      return res.status(404).json({ message: "Doctor not found" });
+    }
+
+    const totalAmount = await Payment.aggregate([
+      {
+        $match: { doctor: doctor._id },
+      },
+      {
+        $group: {
+          _id: null,
+          total: { $sum: { $toDouble: { $ifNull: ["$price", 0] } } },
+        },
+      },
+    ]);
+
+    const total = totalAmount.length > 0 ? Math.round(totalAmount[0].total) : 0;
+    const seventyPercent = Math.round(total * 0.7);
+    const totalSlotCount = doctor.slots.length;
+
+    res.status(200).json({ totalSlotCount, seventyPercent });
+  } catch (error) {
+    console.error(error.message);
+    res.status(500).json({ message: "Internal server error" });
+  }
+};
+
+const doctorReport = async (req, res) => {
+  try {
+    const currentDate = new Date();
+    const monthName = currentDate.toLocaleString("default", { month: "long" });
+    let date = new Date();
+    let year = date.getFullYear();
+    let currentYear = new Date(year, 0, 1);
+    let appointments = [];
+    let appointmentByYear = await AppointmentModel.aggregate([
+      {
+        $match: { createdAt: { $gte: currentYear } },
+      },
+      {
+        $group: {
+          _id: { $dateToString: { format: "%m", date: "$createdAt" } },
+          count: { $sum: 1 },
+        },
+      },
+      { $sort: { _id: 1 } },
+    ]);
+    for (let i = 1; i <= 12; i++) {
+      let result = true;
+      for (let j = 0; j < appointmentByYear.length; j++) {
+        result = false;
+        if (appointmentByYear[j]._id == i) {
+          appointments.push(appointmentByYear[j]);
+          break;
+        } else {
+          result = true;
+        }
+      }
+      if (result) appointments.push({ _id: i, count: 0 });
+    }
+    let appointmentData = [];
+    for (let i = 0; i < appointments.length; i++) {
+      appointmentData.push(appointments[i].count);
+    }
+
+    const result = {
+      currentMonthName: monthName,
+      appointmentData,
+    };
+
+    res.status(200).json(result);
+  } catch (error) {
+    console.log(error.message);
+    res.status(500).json({ status: "Internal Server Error" });
+  }
+};
+
 module.exports = {
   signup,
   specialtyName,
@@ -813,4 +922,7 @@ module.exports = {
   addPriscription,
   addMedicalReport,
   getReviews,
+  chartDetails,
+  counts,
+  doctorReport,
 };

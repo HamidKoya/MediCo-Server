@@ -21,6 +21,9 @@ router.patch('/cancelAppointment',doctorController.cancelAppointment)
 router.post('/prescription',doctorController.addPriscription)
 router.post('/addMedicalReport',doctorController.addMedicalReport)
 router.get('/getReviews',doctorController.getReviews)
+router.get('/chartDetails',doctorController.chartDetails)
+router.get('/counts',doctorController.counts)
+router.get('/doctorReport',doctorController.doctorReport)
 
 
 
