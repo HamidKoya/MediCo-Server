@@ -101,10 +101,16 @@ const userLogin = async (req, res) => {
           if (passCheck) {
             const usertoken = jwt.sign(
               { userId: emailExist._id },
-              process.env.JWT_USER_SECRET_KEY
+              process.env.JWT_USER_SECRET_KEY,{expiresIn:"1h"}
             );
             const expireDate = new Date(Date.now() + 3600000);
-            // res.json({ userData: emailExist, token, status: true })
+            // res.json({ userData: emailExist, token, status: true }) 
+
+            // const refreshToken = jwt.sign(
+            //   { userId: emailExist._id },
+            //   process.env.JWT_USER_REFRESH_SECRET_KEY,{expiresIn:"30d"}
+            // );
+
             const userDataToSend = {
               _id: emailExist._id,
               name: emailExist.name,
