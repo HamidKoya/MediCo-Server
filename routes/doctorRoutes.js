@@ -24,6 +24,7 @@ router.get('/getReviews',doctorController.getReviews)
 router.get('/chartDetails',doctorController.chartDetails)
 router.get('/counts',doctorController.counts)
 router.get('/doctorReport',doctorController.doctorReport)
+router.get('/logout',doctorController.logout)
 
 
 

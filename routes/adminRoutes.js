@@ -27,5 +27,7 @@ router.post('/appData',adminController.appointmentData)
 router.get('/counts',adminController.counts)
 router.get('/adminReport',adminController.adminReport)
 
+router.get('/logout',adminController.logout)
+
 
 module.exports = router
