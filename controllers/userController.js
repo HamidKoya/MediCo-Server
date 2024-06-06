@@ -858,6 +858,14 @@ const getNotifications = async (req, res) => {
   }
 };
 
+const profileTest = async (req, res) => {
+  try {
+    res.status(200).json('test competed')
+  } catch (error) {
+    console.log(error.message);
+  }
+}
+
 module.exports = {
   userRegistration,
   otpVerify,
@@ -883,4 +891,5 @@ module.exports = {
   medicalReport,
   getReview,
   getNotifications,
+  profileTest
 };
