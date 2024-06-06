@@ -564,6 +564,14 @@ const logout = async (req, res) => {
   }
 };
 
+const tokenChecker = async (req, res) => {
+  try {
+    res.status(200).json('admin token checked');
+  } catch (error) {
+    console.log(error.message);
+  }
+}
+
 module.exports = {
   login,
   usersList,
@@ -584,4 +592,5 @@ module.exports = {
   counts,
   adminReport,
   logout,
+  tokenChecker
 };

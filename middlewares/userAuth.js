@@ -5,7 +5,7 @@ const verifyToken = (req, res, next) => {
   const token = req.cookies.user_token;
   if (!token)
     return next(
-      errorHandler(401, "Your session has expired. Please log in again.")
+      errorHandler(401, "Your token has expired. Please log in again.")
     );
 
   jwt.verify(token, process.env.JWT_USER_SECRET_KEY, (err, user) => {
