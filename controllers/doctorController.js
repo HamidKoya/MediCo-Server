@@ -912,6 +912,15 @@ const logout = async (req, res) => {
   }
 }
 
+const checkToken = async (req, res) => {
+  try {
+    res.status(200).json('doctor token test')
+  } catch (error) {
+    console.log(error.message);
+  }
+}
+
+
 module.exports = {
   signup,
   specialtyName,
@@ -935,5 +944,6 @@ module.exports = {
   chartDetails,
   counts,
   doctorReport,
-  logout
+  logout,
+  checkToken
 };
