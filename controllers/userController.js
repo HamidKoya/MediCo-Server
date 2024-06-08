@@ -101,10 +101,11 @@ const userLogin = async (req, res) => {
           if (passCheck) {
             const usertoken = jwt.sign(
               { userId: emailExist._id },
-              process.env.JWT_USER_SECRET_KEY,{expiresIn:"1h"}
+              process.env.JWT_USER_SECRET_KEY,
+              { expiresIn: "1h" }
             );
             const expireDate = new Date(Date.now() + 3600000);
-            // res.json({ userData: emailExist, token, status: true }) 
+            // res.json({ userData: emailExist, token, status: true })
 
             // const refreshToken = jwt.sign(
             //   { userId: emailExist._id },
@@ -124,7 +125,9 @@ const userLogin = async (req, res) => {
             res
               .cookie("user_token", usertoken, {
                 httpOnly: true,
+                secure: process.env.NODE_ENV === "production", // Only set secure cookies in production
                 expires: expireDate,
+                sameSite: "strict", // Adjust according to your needs
               })
               .status(200)
               .json({
@@ -860,11 +863,11 @@ const getNotifications = async (req, res) => {
 
 const profileTest = async (req, res) => {
   try {
-    res.status(200).json('test competed')
+    res.status(200).json("test competed");
   } catch (error) {
     console.log(error.message);
   }
-}
+};
 
 module.exports = {
   userRegistration,
@@ -891,5 +894,5 @@ module.exports = {
   medicalReport,
   getReview,
   getNotifications,
-  profileTest
+  profileTest,
 };
