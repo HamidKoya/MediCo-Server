@@ -125,9 +125,7 @@ const userLogin = async (req, res) => {
             res
               .cookie("user_token", usertoken, {
                 httpOnly: true,
-                secure: process.env.NODE_ENV === "production", // Only set secure cookies in production
                 expires: expireDate,
-                sameSite: "strict", // Adjust according to your needs
               })
               .status(200)
               .json({
