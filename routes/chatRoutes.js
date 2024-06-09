@@ -2,9 +2,11 @@ const express = require("express");
 const chatRoute = express();
 const chatController = require("../controllers/chatController.js");
 
-const verifyToken = require("../middlewares/userAuth.js")
+const userVerifyToken = require("../middlewares/userAuth.js")
+const doctorVerifyToken = require("../middlewares/doctorAuth.js")
 
-chatRoute.get("/chat/:userId",verifyToken, chatController.userChats);
+chatRoute.get("/chatuser/:userId",userVerifyToken, chatController.userChats);
+chatRoute.get("/chatdoctor/:userId",doctorVerifyToken, chatController.userChats);
 chatRoute.get('/doctorData/:doctorId',chatController.doctorData)
 chatRoute.get('/userData/:userId',chatController.userData)
 
