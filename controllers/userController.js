@@ -125,7 +125,7 @@ const userLogin = async (req, res) => {
               httpOnly: true,  // Helps prevent cross-site scripting attacks
               secure: process.env.NODE_ENV === 'production',  // Use secure cookies in production
               maxAge: 3600000,  // 1 hour
-              sameSite: 'strict'  // Helps prevent CSRF attacks
+              sameSite: 'none'  // Helps prevent CSRF attacks
           })
               .status(200)
               .json({
